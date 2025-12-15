@@ -32,5 +32,4 @@ Em desenvolvimento ativo 🚧
 
 ## 📄 Licença
 Este projeto utiliza como base o sistema MapOS  
-https://github.com/mapos/mapos
-
+(https://github.com/RamonSilva20/mapos)
