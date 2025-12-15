@@ -1,0 +1,18 @@
+# Configurações sensíveis
+/application/config/database.php
+/application/config/config.php
+.env
+
+# Dependências
+/vendor/
+/node_modules/
+
+# Cache e logs
+/application/cache/
+/application/logs/
+
+# Uploads
+/uploads/
+
+# Banco (opcional)
+banco.sql
