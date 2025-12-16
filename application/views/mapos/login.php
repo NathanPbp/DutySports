@@ -186,7 +186,6 @@
     inset:0;
     background:rgba(0,0,0,0.85);
     z-index:9999;
-    display:flex;
     justify-content:center;
     align-items:center;
 ">

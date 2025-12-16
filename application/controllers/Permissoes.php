@@ -120,6 +120,10 @@ class Permissoes extends MY_Controller
                 'eCobranca' => $this->input->post('eCobranca'),
                 'dCobranca' => $this->input->post('dCobranca'),
                 'vCobranca' => $this->input->post('vCobranca'),
+                // 🔥 CAIXA
+                'vCaixa' => $this->input->post('vCaixa') ? 1 : 0,
+
+
             ];
             $permissoes = serialize($permissoes);
 
@@ -221,6 +225,8 @@ class Permissoes extends MY_Controller
                 'eCobranca' => $this->input->post('eCobranca'),
                 'dCobranca' => $this->input->post('dCobranca'),
                 'vCobranca' => $this->input->post('vCobranca'),
+                'vCaixa'=> $this->input->post('vCaixa') ? 1 : 0,
+
 
             ];
             $permissoes = serialize($permissoes);

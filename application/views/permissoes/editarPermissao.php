@@ -440,6 +440,48 @@
                         </div>
                     </div>
                 </div>
+                <!-- caixa -->
+                 <div class="accordion-group widget-box">
+    <div class="accordion-heading">
+        <div class="widget-title">
+            <a data-parent="#collapse-group" href="#collapseCaixa" data-toggle="collapse">
+                <span><i class='bx bx-cash-register icon-cli'></i></span>
+                <h5 style="padding-left: 28px">Caixa</h5>
+                <span><i class='bx bx-chevron-right icon-clic'></i></span>
+            </a>
+        </div>
+    </div>
+    <div class="collapse accordion-body" id="collapseCaixa">
+        <div class="widget-content">
+            <table class="table table-bordered">
+                <tr>
+                    <td colspan="4"></td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>
+                            <input
+                                <?php
+                                if (isset($permissoes['vCaixa']) && $permissoes['vCaixa'] == '1') {
+                                    echo 'checked';
+                                }
+                                ?>
+                                name="vCaixa"
+                                class="marcar"
+                                type="checkbox"
+                                value="1"
+                            />
+                            <span class="lbl"> Acessar Caixa</span>
+                        </label>
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+                                        <!-- caixa -->
 
                 <div class="accordion-group widget-box">
                     <div class="accordion-heading">

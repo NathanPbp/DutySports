@@ -242,6 +242,35 @@
                                 </div>
                             </div>
                         </div>
+                        <!--              Caixa                      -->
+                <div class="accordion-group widget-box">
+    <div class="accordion-heading">
+        <div class="widget-title">
+            <a data-parent="#collapse-group" href="#collapseCaixa" data-toggle="collapse">
+                <span><i class='bx bx-cash-stack icon-cli'></i></span>
+                <h5 style="padding-left: 28px">Caixa</h5>
+            </a>
+        </div>
+    </div>
+    <div class="collapse accordion-body" id="collapseCaixa">
+        <div class="widget-content">
+            <table class="table table-bordered">
+                <tbody>
+                <tr>
+                    <td>
+                        <label>
+                            <input name="vCaixa" class="marcar" type="checkbox" value="1" />
+                            <span class="lbl"> Visualizar Caixa</span>
+                        </label>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+                        <!--              Caixa                      -->
                         <div class="accordion-group widget-box">
                             <div class="accordion-heading">
                                 <div class="widget-title">

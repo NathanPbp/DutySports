@@ -373,10 +373,18 @@ class Os_model extends CI_Model
 
         return $pix->getQRCode();
     }
-    public function getByCodigoComanda($codigo)
+   public function getByCodigoComanda($codigo)
 {
-    $this->db->where('codigo_comanda', $codigo);
-    return $this->db->get('os')->row();
+    $this->db->select('os.*, clientes.nomeCliente');
+    $this->db->from('os');
+    $this->db->join(
+        'clientes',
+        'clientes.idClientes = os.clientes_id',
+        'left'
+    );
+    $this->db->where('os.codigo_comanda', $codigo);
+
+    return $this->db->get()->row();
 }
 
 }
