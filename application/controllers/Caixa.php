@@ -1,8 +1,4 @@
-<?php
-
-if (!defined('BASEPATH')) {
-    exit('No direct script access allowed');
-}
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
 class Caixa extends MY_Controller
 {
@@ -10,12 +6,10 @@ class Caixa extends MY_Controller
     {
         parent::__construct();
 
-        if (
-            !$this->permission->checkPermission(
-                $this->session->userdata('permissao'),
-                'vCaixa'
-            )
-        ) {
+        if (!$this->permission->checkPermission(
+            $this->session->userdata('permissao'),
+            'vCaixa'
+        )) {
             $this->session->set_flashdata(
                 'error',
                 'Você não tem permissão para acessar o Caixa.'
@@ -27,148 +21,259 @@ class Caixa extends MY_Controller
         $this->data['menuCaixa'] = 'Caixa';
     }
 
+    /* =========================
+     * TELA INICIAL
+     * ========================= */
     public function index()
-{
-    $codigo = $this->session->userdata('caixa_codigo_comanda');
-
-    if (!$codigo) {
+    {
         $this->data['view'] = 'caixa/index';
         return $this->layout();
     }
 
-    $os = $this->os_model->getByCodigoComanda($codigo);
-    if (!$os) {
-        $this->session->unset_userdata('caixa_codigo_comanda');
-        redirect('caixa');
+    /* =========================
+     * BUSCAR COMANDA
+     * ========================= */
+    public function buscar()
+    {
+        $codigo = $this->input->post('codigo_comanda');
+
+        if (!$codigo) {
+            $this->session->set_flashdata('error', 'Informe o código da comanda.');
+            redirect('caixa');
+        }
+
+        $os = $this->os_model->getByCodigoComanda($codigo);
+
+        if (!$os) {
+            $this->session->set_flashdata('error', 'Comanda não encontrada.');
+            redirect('caixa');
+        }
+
+        redirect('caixa/visualizar/' . $os->idOs);
     }
 
-    $produtos = $this->os_model->getProdutos($os->idOs);
-    $servicos = $this->os_model->getServicos($os->idOs);
+    /* =========================
+     * VISUALIZAR COMANDA / CAIXA
+     * ========================= */
+    public function visualizar($idOs)
+    {
+        $os = $this->os_model->getById($idOs);
+        if (!$os) redirect('caixa');
 
-    // TOTAL DA OS
-    $totalOS = 0;
-    foreach ($produtos as $p) {
-        $totalOS += (float)$p->subTotal;
-    }
-    foreach ($servicos as $s) {
-        $qtd = $s->quantidade ?: 1;
-        $totalOS += (float)$s->preco * $qtd;
-    }
+        $produtos = $this->os_model->getProdutos($idOs);
+        $servicos = $this->os_model->getServicos($idOs);
 
-    // PAGAMENTOS
-    $pagamentos = $this->db
-        ->where('vendas_id', $os->idOs)
-        ->where('baixado', 1)
-        ->get('lancamentos')
-        ->result();
+        /* ---- calcula total da OS ---- */
+        $totalOS = 0;
 
-    $totalPago = 0;
-    foreach ($pagamentos as $p) {
-        $totalPago += (float)$p->valor;
-    }
+        foreach ($produtos as $p) {
+            $totalOS += (float)$p->subTotal;
+        }
 
-    $saldo = $totalOS - $totalPago;
+        foreach ($servicos as $s) {
+            $qtd   = isset($s->quantidade) ? (int)$s->quantidade : 1;
+            $preco = isset($s->preco) ? (float)$s->preco : 0;
+            $totalOS += isset($s->subTotal)
+                ? (float)$s->subTotal
+                : ($qtd * $preco);
+        }
 
-    // STATUS (NÃO FECHA AUTOMATICAMENTE)
-    $status = $saldo <= 0 ? 'PAGO' : 'AGUARDANDO_CAIXA';
-    $this->db->where('idOs', $os->idOs)->update('os', [
-        'status_os' => $status
-    ]);
+        /* ---- garante venda vinculada ---- */
+        $venda = $this->_getOrCreateVenda($os, $totalOS);
 
-    $this->data = array_merge($this->data, [
-        'os'         => $os,
-        'produtos'   => $produtos,
-        'servicos'   => $servicos,
-        'totalOS'    => $totalOS,
-        'totalPago'  => $totalPago,
-        'saldo'      => $saldo,
-        'pagamentos' => $pagamentos,
-        'view'       => 'caixa/resultado'
-    ]);
+        /* ---- pagamentos ---- */
+        $pagamentos = $this->db
+            ->where('vendas_id', $venda->idVendas)
+            ->where('tipo', 'receita')
+            ->order_by('idLancamentos', 'DESC')
+            ->get('lancamentos')
+            ->result();
 
-    return $this->layout();
-}
+        $totalPago = 0;
+        foreach ($pagamentos as $p) {
+            $totalPago += (float)$p->valor;
+        }
 
-   public function buscar()
-{
-    $codigo = $this->input->post('codigo_comanda');
+        $saldo = $totalOS - $totalPago;
 
-    if (!$codigo) {
-        redirect('caixa');
-    }
+        /* =========================
+         * FECHAMENTO AUTOMÁTICO
+         * ========================= */
+        if ($totalOS > 0 && $saldo <= 0) {
 
-    $os = $this->os_model->getByCodigoComanda($codigo);
-    if (!$os) {
-        redirect('caixa');
-    }
+            // fecha OS
+            $this->db->where('idOs', $idOs)->update('os', [
+                'status_os' => 'PAGO',
+                'status'    => 'Finalizado'
+            ]);
 
-    $produtos = $this->os_model->getProdutos($os->idOs);
-    $servicos = $this->os_model->getServicos($os->idOs);
+            // fatura venda
+            $this->db->where('idVendas', $venda->idVendas)->update('vendas', [
+                'faturado' => 1,
+                'status'   => 'Faturado'
+            ]);
 
-    // Total da OS
-    $totalOS = (float) $os->valorTotal;
+        } else {
+            // mantém OS aguardando caixa
+            $this->db->where('idOs', $idOs)->update('os', [
+                'status_os' => 'AGUARDANDO_CAIXA'
+            ]);
+        }
 
-    // 🔥 SOMA PAGAMENTOS PELO vendas_id
-    $row = $this->db
-        ->select_sum('valor')
-        ->where('vendas_id', $os->idOs)
-        ->where('tipo', 'entrada')
-        ->get('lancamentos')
-        ->row();
+        /* ---- envia para view ---- */
+        $this->data = array_merge($this->data, [
+            'os'         => $os,
+            'produtos'   => $produtos,
+            'servicos'   => $servicos,
+            'totalOS'    => $totalOS,
+            'totalPago'  => $totalPago,
+            'saldo'      => $saldo,
+            'pagamentos' => $pagamentos,
+            'venda'      => $venda
+        ]);
 
-    $totalPago = $row && $row->valor ? (float)$row->valor : 0;
-    $saldo = $totalOS - $totalPago;
-
-    // Histórico de pagamentos
-    $pagamentos = $this->db
-        ->where('vendas_id', $os->idOs)
-        ->where('tipo', 'entrada')
-        ->order_by('idLancamentos', 'ASC')
-        ->get('lancamentos')
-        ->result();
-
-    $this->data['os'] = $os;
-    $this->data['produtos'] = $produtos;
-    $this->data['servicos'] = $servicos;
-    $this->data['totalOS'] = $totalOS;
-    $this->data['totalPago'] = $totalPago;
-    $this->data['saldo'] = $saldo;
-    $this->data['pagamentos'] = $pagamentos;
-
-    $this->data['view'] = 'caixa/resultado';
-    return $this->layout();
-}
-
-
-   public function pagar()
-{
-    $idOs  = $this->input->post('idOs');
-    $valor = str_replace(['.', ','], ['', '.'], $this->input->post('valor_pago'));
-    $forma = $this->input->post('forma_pagamento');
-
-    if (!$idOs || !$valor || !$forma) {
-        redirect('caixa');
+        $this->data['view'] = 'caixa/resultado';
+        return $this->layout();
     }
 
-    // 🔹 INSERE NO FINANCEIRO (PADRÃO MAPOS)
-    $this->db->insert('lancamentos', [
-        'descricao'     => 'Pagamento OS #' . $idOs,
-        'valor'         => $valor,
-        'tipo'          => 'entrada',
-        'forma_pgto'    => $forma,
-        'data_pagamento'=> date('Y-m-d'),
-        'vendas_id'     => $idOs,
-        'usuarios_id'   => $this->session->userdata('id'),
-    ]);
+    /* =========================
+     * REGISTRAR PAGAMENTO
+     * ========================= */
+    public function pagar()
+    {
+        $idOs  = $this->input->post('idOs');
+        $forma = $this->input->post('forma_pagamento');
+        $valor = $this->input->post('valor_pago');
 
-    // NÃO FECHA A COMANDA AUTOMATICAMENTE
-    redirect('caixa');
-}
+        if (!$idOs || !$forma || !$valor) {
+            redirect('caixa');
+        }
 
+        // normaliza valor
+        $valor = str_replace(['R$', ' ', '.'], '', $valor);
+        $valor = str_replace(',', '.', $valor);
+        $valor = (float)$valor;
 
+        if ($valor <= 0) {
+            redirect('caixa/visualizar/' . $idOs);
+        }
+
+        $os = $this->os_model->getById($idOs);
+        if (!$os) redirect('caixa');
+
+        $produtos = $this->os_model->getProdutos($idOs);
+        $servicos = $this->os_model->getServicos($idOs);
+
+        $totalOS = 0;
+        foreach ($produtos as $p) $totalOS += (float)$p->subTotal;
+        foreach ($servicos as $s) {
+            $qtd   = $s->quantidade ?? 1;
+            $preco = $s->preco ?? 0;
+            $totalOS += $s->subTotal ?? ($qtd * $preco);
+        }
+
+        $venda = $this->_getOrCreateVenda($os, $totalOS);
+
+        /* =========================
+         * ENTRADA / PAGAMENTO / RETIRADA
+         * ========================= */
+        $jaPago = $this->db
+            ->select_sum('valor')
+            ->where('vendas_id', $venda->idVendas)
+            ->where('tipo', 'receita')
+            ->get('lancamentos')
+            ->row();
+
+        $totalPagoAntes = (float) ($jaPago->valor ?? 0);
+        $saldoAntes = $totalOS - $totalPagoAntes;
+
+        if ($totalPagoAntes <= 0) {
+            $tipoPagamento = 'ENTRADA';
+        } elseif ($valor >= $saldoAntes) {
+            $tipoPagamento = 'RETIRADA';
+        } else {
+            $tipoPagamento = 'PAGAMENTO';
+        }
+
+        /* =========================
+         * FINANCEIRO PERFEITO:
+         * - nome do cliente no relatório
+         * - filtro por data funcionando (usa data_vencimento)
+         * ========================= */
+        $clienteNome = null;
+        if (isset($os->nomeCliente) && $os->nomeCliente) {
+            $clienteNome = $os->nomeCliente;
+        } elseif (isset($os->nome) && $os->nome) {
+            $clienteNome = $os->nome;
+        } else {
+            $clienteNome = 'Cliente';
+        }
+
+        $dataAgora = date('Y-m-d H:i:s');
+
+        $this->db->insert('lancamentos', [
+            'descricao'          => $tipoPagamento . ' - OS #' . $os->idOs,
+            'valor'              => $valor,
+
+            // ✅ salva data/hora real
+            'data_pagamento'     => $dataAgora,
+
+            // ✅ ESSENCIAL para filtrar no Financeiro (MapOS filtra por vencimento)
+            'data_vencimento'    => date('Y-m-d'),
+
+            'baixado'            => 1,
+
+            // ✅ nome do cliente aparece no relatório
+            'cliente_fornecedor' => $clienteNome,
+
+            'forma_pgto'         => $forma,
+            'tipo'               => 'receita',
+            'clientes_id'        => $os->clientes_id,
+            'vendas_id'          => $venda->idVendas,
+            'usuarios_id'        => $this->session->userdata('id_admin'),
+        ]);
+
+        redirect('caixa/visualizar/' . $idOs);
+    }
+
+    /* =========================
+     * CRIA / BUSCA VENDA
+     * ========================= */
+    private function _getOrCreateVenda($os, $totalOS)
+    {
+        $venda = $this->db
+            ->where('os_id', $os->idOs)
+            ->order_by('idVendas', 'DESC')
+            ->get('vendas')
+            ->row();
+
+        if ($venda) return $venda;
+
+        $this->db->insert('vendas', [
+            'dataVenda'      => date('Y-m-d'),
+            'clientes_id'    => $os->clientes_id,
+            'usuarios_id'    => $this->session->userdata('id_admin'),
+            'os_id'          => $os->idOs,
+            'valorTotal'     => $totalOS,
+            'desconto'       => 0,
+            'valor_desconto' => $totalOS,
+            'faturado'       => 0,
+            'status'         => 'Aberto',
+            'garantia'       => 0,
+            'observacoes'    => 'Venda criada automaticamente pelo Caixa'
+        ]);
+
+        return $this->db
+            ->where('idVendas', $this->db->insert_id())
+            ->get('vendas')
+            ->row();
+    }
+
+    /* =========================
+     * VOLTAR
+     * ========================= */
     public function cancelar()
     {
-        $this->session->unset_userdata('caixa_codigo_comanda');
         redirect('caixa');
     }
 }

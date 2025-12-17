@@ -373,8 +373,10 @@ class Os_model extends CI_Model
 
         return $pix->getQRCode();
     }
-   public function getByCodigoComanda($codigo)
+  public function getByCodigoComanda($codigo)
 {
+    $codigo = trim($codigo);
+
     $this->db->select('os.*, clientes.nomeCliente');
     $this->db->from('os');
     $this->db->join(
@@ -382,9 +384,19 @@ class Os_model extends CI_Model
         'clientes.idClientes = os.clientes_id',
         'left'
     );
+
     $this->db->where('os.codigo_comanda', $codigo);
 
-    return $this->db->get()->row();
+    $query = $this->db->get();
+
+    if (!$query) {
+        log_message('error', 'ERRO SQL getByCodigoComanda: ' . $this->db->last_query());
+        return null;
+    }
+
+    return $query->row();
 }
+
+
 
 }

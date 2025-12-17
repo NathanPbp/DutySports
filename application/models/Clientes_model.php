@@ -8,46 +8,60 @@ class Clientes_model extends CI_Model
     }
 
     public function get($table, $fields, $where = '', $perpage = 0, $start = 0, $one = false, $array = 'array')
-    {
-        $this->db->select($fields);
-        $this->db->from($table);
-        $this->db->order_by('idClientes', 'desc');
+{
+    $this->db->select($fields);
+    $this->db->from($table);
+    $this->db->order_by('idClientes', 'desc');
+
+    if ($perpage > 0) {
         $this->db->limit($perpage, $start);
-
-        if ($where) {
-
-            // Remove tudo que não for número
-            $clean = preg_replace('/\D/', '', $where);
-
-            $this->db->group_start();
-
-                // Busca normal por nome, documento, email
-                $this->db->like('nomeCliente', $where);
-                $this->db->or_like('documento', $where);
-                $this->db->or_like('email', $where);
-
-                // Busca por telefone com máscara
-                $this->db->or_like('telefone', $where);
-                $this->db->or_like('celular', $where);
-
-                // Busca por telefone sem máscara
-                if (!empty($clean)) {
-                    $this->db->or_where("REPLACE(REPLACE(REPLACE(telefone, '(', ''), ')', ''), '-', '') LIKE", "%$clean%");
-                    $this->db->or_where("REPLACE(REPLACE(REPLACE(celular, '(', ''), ')', ''), '-', '') LIKE", "%$clean%");
-                }
-
-            $this->db->group_end();
-        }
-
-        $query = $this->db->get();
-
-        if (!$query) {
-            log_message('error', 'Erro na query Clientes_model::get() - ' . $this->db->last_query());
-            return [];
-        }
-
-        return !$one ? $query->result() : $query->row();
     }
+
+    if ($where) {
+
+        // Remove tudo que não for número (para busca por telefone)
+        $clean = preg_replace('/\D/', '', $where);
+
+        $this->db->group_start();
+
+            // Busca padrão
+            $this->db->like('nomeCliente', $where);
+            $this->db->or_like('documento', $where);
+            $this->db->or_like('email', $where);
+            $this->db->or_like('telefone', $where);
+            $this->db->or_like('celular', $where);
+
+            // Busca por telefone sem máscara (FORMA SEGURA)
+            if (!empty($clean)) {
+                $this->db->or_where(
+                    "REPLACE(REPLACE(REPLACE(telefone, '(', ''), ')', ''), '-', '') LIKE '%{$clean}%'",
+                    null,
+                    false
+                );
+
+                $this->db->or_where(
+                    "REPLACE(REPLACE(REPLACE(celular, '(', ''), ')', ''), '-', '') LIKE '%{$clean}%'",
+                    null,
+                    false
+                );
+            }
+
+        $this->db->group_end();
+    }
+
+    $query = $this->db->get();
+
+    if (!$query) {
+        log_message(
+            'error',
+            'Erro na query Clientes_model::get() - ' . $this->db->last_query()
+        );
+        return [];
+    }
+
+    return !$one ? $query->result() : $query->row();
+}
+
 
     public function getById($id)
     {
@@ -155,5 +169,72 @@ class Clientes_model extends CI_Model
 
         return true;
     }
+    public function pagar()
+{
+    $idOs  = $this->input->post('idOs');
+    $forma = $this->input->post('forma_pagamento');
+    $valor = $this->input->post('valor_pago');
+
+    if (!$idOs || !$forma || !$valor) {
+        $this->session->set_flashdata('error', 'Dados inválidos.');
+        redirect('caixa');
+    }
+
+    // Normaliza valor "50,00" → 50.00
+    $valor = str_replace(['R$', ' ', '.'], '', $valor);
+    $valor = str_replace(',', '.', $valor);
+    $valor = (float)$valor;
+
+    if ($valor <= 0) {
+        $this->session->set_flashdata('error', 'Informe um valor válido.');
+        redirect('caixa/visualizar/' . $idOs);
+    }
+
+    $os = $this->os_model->getById($idOs);
+    if (!$os) {
+        redirect('caixa');
+    }
+
+    // 🔹 Recalcula total da OS (mesma lógica da visualização)
+    $produtos = $this->os_model->getProdutos($idOs);
+    $servicos = $this->os_model->getServicos($idOs);
+
+    $totalOS = 0;
+    foreach ($produtos as $p) {
+        $totalOS += (float)$p->subTotal;
+    }
+    foreach ($servicos as $s) {
+        $qtd = isset($s->quantidade) ? (int)$s->quantidade : 1;
+        $preco = isset($s->preco) ? (float)$s->preco : 0;
+        $totalOS += isset($s->subTotal) ? (float)$s->subTotal : ($qtd * $preco);
+    }
+
+    // 🔹 Garante venda criada
+    $venda = $this->_getOrCreateVenda($os, $totalOS);
+    if (!$venda) {
+        $this->session->set_flashdata('error', 'Erro ao localizar venda.');
+        redirect('caixa/visualizar/' . $idOs);
+    }
+
+    // 🔹 Insere lançamento (pagamento)
+    $dadosLancamento = [
+        'descricao'          => 'Pagamento OS #' . $os->idOs,
+        'valor'              => $valor,
+        'data_pagamento'     => date('Y-m-d'),
+        'baixado'            => 1,
+        'cliente_fornecedor' => $os->nomeCliente ?? 'Cliente',
+        'forma_pgto'         => $forma,
+        'tipo'               => 'receita',
+        'clientes_id'        => $os->clientes_id,
+        'vendas_id'          => $venda->idVendas,
+        'usuarios_id'        => $this->session->userdata('id_admin'),
+    ];
+
+    $this->db->insert('lancamentos', $dadosLancamento);
+
+    $this->session->set_flashdata('success', 'Pagamento registrado com sucesso!');
+    redirect('caixa/visualizar/' . $idOs);
+}
+
 
 }
