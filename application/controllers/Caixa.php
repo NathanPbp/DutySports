@@ -268,6 +268,7 @@ class Caixa extends MY_Controller
             ->get('vendas')
             ->row();
     }
+// teste github
 
     /* =========================
      * VOLTAR
