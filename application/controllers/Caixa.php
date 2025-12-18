@@ -31,6 +31,70 @@ class Caixa extends MY_Controller
     }
 
     /* =========================
+     * RELATÓRIO DE CAIXA
+     * (DENTRO DO MÓDULO CAIXA)
+     * ========================= */
+    public function relatorio()
+    {
+        // Período (GET)
+        $dataInicio = $this->input->get('data_inicio');
+        $dataFim    = $this->input->get('data_fim');
+
+        // Defaults: hoje
+        if (!$dataInicio) $dataInicio = date('Y-m-d');
+        if (!$dataFim)    $dataFim    = date('Y-m-d');
+
+        // Normalização básica
+        $dataInicio = preg_replace('/[^0-9\-]/', '', $dataInicio);
+        $dataFim    = preg_replace('/[^0-9\-]/', '', $dataFim);
+
+        $inicioDT = $dataInicio . ' 00:00:00';
+        $fimDT    = $dataFim . ' 23:59:59';
+
+        // Lista de lançamentos do período (somente receitas baixadas)
+        $lancamentos = $this->db
+            ->select("idLancamentos, cliente_fornecedor, forma_pgto, valor, data_pagamento, descricao")
+            ->from('lancamentos')
+            ->where('tipo', 'receita')
+            ->where('baixado', 1)
+            ->where('data_pagamento >=', $inicioDT)
+            ->where('data_pagamento <=', $fimDT)
+            ->order_by('data_pagamento', 'DESC')
+            ->get()
+            ->result();
+
+        // Totais (por tipo e por forma)
+        // OBS: o tipo do movimento (ENTRADA/PAGAMENTO/RETIRADA) está no prefixo da descrição.
+        $totais = $this->db->query(
+            "SELECT
+                SUM(CASE WHEN descricao LIKE 'ENTRADA%'  THEN valor ELSE 0 END) AS total_entrada,
+                SUM(CASE WHEN descricao LIKE 'PAGAMENTO%' THEN valor ELSE 0 END) AS total_pagamento,
+                SUM(CASE WHEN descricao LIKE 'RETIRADA%' THEN valor ELSE 0 END) AS total_retirada,
+                SUM(CASE WHEN forma_pgto = 'PIX'      THEN valor ELSE 0 END) AS total_pix,
+                SUM(CASE WHEN forma_pgto = 'Dinheiro' THEN valor ELSE 0 END) AS total_dinheiro,
+                SUM(CASE WHEN forma_pgto = 'Cartão'   THEN valor ELSE 0 END) AS total_cartao,
+                SUM(valor) AS total_geral
+             FROM lancamentos
+             WHERE tipo = 'receita'
+               AND baixado = 1
+               AND data_pagamento BETWEEN ? AND ?",
+            [$inicioDT, $fimDT]
+        )->row();
+
+        $this->data = array_merge($this->data, [
+            'dataInicio'  => $dataInicio,
+            'dataFim'     => $dataFim,
+            'inicioDT'    => $inicioDT,
+            'fimDT'       => $fimDT,
+            'lancamentos' => $lancamentos,
+            'totais'      => $totais,
+        ]);
+
+        $this->data['view'] = 'caixa/relatorio';
+        return $this->layout();
+    }
+
+    /* =========================
      * BUSCAR COMANDA
      * ========================= */
     public function buscar()

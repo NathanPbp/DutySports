@@ -1,6 +1,16 @@
 <div class="container">
     <h3>Caixa — Buscar Pedido</h3>
 
+    <?php $isRelatorio = ($this->uri->segment(2) === 'relatorio'); ?>
+    <ul class="nav nav-tabs" style="margin: 10px 0 15px;">
+        <li class="<?= $isRelatorio ? '' : 'active' ?>">
+            <a href="<?= site_url('caixa') ?>">Caixa</a>
+        </li>
+        <li class="<?= $isRelatorio ? 'active' : '' ?>">
+            <a href="<?= site_url('caixa/relatorio') ?>">Relatório de Caixa</a>
+        </li>
+    </ul>
+
     <?php if ($this->session->flashdata('error')) { ?>
         <div class="alert alert-danger">
             <?= $this->session->flashdata('error') ?>

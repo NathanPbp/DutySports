@@ -2,6 +2,16 @@
 
     <h3 style="margin-top:10px;">🧾 Caixa — Comanda <?= $os->codigo_comanda ?></h3>
 
+    <?php $isRelatorio = ($this->uri->segment(2) === 'relatorio'); ?>
+    <ul class="nav nav-tabs" style="margin: 10px 0 15px;">
+        <li class="<?= $isRelatorio ? '' : 'active' ?>">
+            <a href="<?= site_url('caixa') ?>">Caixa</a>
+        </li>
+        <li class="<?= $isRelatorio ? 'active' : '' ?>">
+            <a href="<?= site_url('caixa/relatorio') ?>">Relatório de Caixa</a>
+        </li>
+    </ul>
+
     <div class="alert alert-info">
         <strong>Cliente:</strong>
         <?= ($os->nomeCliente ?? ($os->nome ?? '-')) ?><br>
