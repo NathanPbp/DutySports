@@ -305,53 +305,83 @@ class Os extends MY_Controller
 
         return $this->layout();
     }
+    
 
     public function visualizar()
-    {
-        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
-            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
-            redirect('mapos');
-        }
-
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
-            redirect(base_url());
-        }
-
-        $this->data['custom_error'] = '';
-        $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
-
-        $this->load->model('mapos_model');
-        $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
-        $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
-        $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
-        $this->data['emitente'] = $this->mapos_model->getEmitente();
-        $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
-        $this->data['anotacoes'] = $this->os_model->getAnotacoes($this->uri->segment(3));
-        $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
-        $this->data['qrCode'] = $this->os_model->getQrCode(
-            $this->uri->segment(3),
-            $this->data['configuration']['pix_key'],
-            $this->data['emitente']
-        );
-        $this->data['modalGerarPagamento'] = $this->load->view(
-            'cobrancas/modalGerarPagamento',
-            [
-                'id' => $this->uri->segment(3),
-                'tipo' => 'os',
-            ],
-            true
-        );
-        $this->data['view'] = 'os/visualizarOs';
-        $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
-
-        if ($return = $this->os_model->valorTotalOS($this->uri->segment(3))) {
-            $this->data['totalServico'] = $return['totalServico'];
-            $this->data['totalProdutos'] = $return['totalProdutos'];
-        }
-
-        return $this->layout();
+{
+    if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+        $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
+        redirect('mapos');
     }
+
+    if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+        $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
+        redirect(base_url());
+    }
+
+    // =====================================================
+    // ID DA OS (PADRÃO DO SEU CONTROLLER)
+    // =====================================================
+    $idOs = (int) $this->uri->segment(3);
+
+    // =====================================================
+    // PRODUÇÃO
+    // =====================================================
+    $this->load->model('Producao_model');
+
+    
+      $this->data['producao']      = $this->Producao_model->getProducaoByOs($idOs);
+      $this->data['producaoGrade'] = $this->Producao_model->getGradeByOs($idOs);
+      $this->data['tecnicas']      = $this->Producao_model->getTecnicas();
+
+
+    // Técnicas marcadas na OS (ids para checkbox)
+    $tecnicasOsObj = $this->Producao_model->getTecnicasByOs($idOs);
+    $this->data['tecnicasOs'] = array_map(function ($t) {
+        return (int) $t->id;
+    }, $tecnicasOsObj);
+
+    // =====================================================
+    // RESTO DA OS (SEU CÓDIGO ORIGINAL – SEM ALTERAÇÃO)
+    // =====================================================
+    $this->data['custom_error'] = '';
+    $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
+
+    $this->load->model('mapos_model');
+    $this->data['result'] = $this->os_model->getById($idOs);
+    $this->data['produtos'] = $this->os_model->getProdutos($idOs);
+    $this->data['servicos'] = $this->os_model->getServicos($idOs);
+    $this->data['emitente'] = $this->mapos_model->getEmitente();
+    $this->data['anexos'] = $this->os_model->getAnexos($idOs);
+    $this->data['anotacoes'] = $this->os_model->getAnotacoes($idOs);
+    $this->data['editavel'] = $this->os_model->isEditable($idOs);
+
+    $this->data['qrCode'] = $this->os_model->getQrCode(
+        $idOs,
+        $this->data['configuration']['pix_key'],
+        $this->data['emitente']
+    );
+
+    $this->data['modalGerarPagamento'] = $this->load->view(
+        'cobrancas/modalGerarPagamento',
+        [
+            'id' => $idOs,
+            'tipo' => 'os',
+        ],
+        true
+    );
+
+    if ($return = $this->os_model->valorTotalOS($idOs)) {
+        $this->data['totalServico'] = $return['totalServico'];
+        $this->data['totalProdutos'] = $return['totalProdutos'];
+    }
+
+    $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
+    $this->data['view'] = 'os/visualizarOs';
+
+    return $this->layout();
+}
+
 
     public function validarCPF($cpf)
     {
@@ -476,6 +506,75 @@ class Os extends MY_Controller
 
         $this->load->view('os/imprimirOsTermica', $this->data);
     }
+
+    public function salvarProducao()
+{
+    if (!$this->permission->checkPermission(
+        $this->session->userdata('permissao'),
+        'eOs'
+    )) {
+        show_error('Você não tem permissão.');
+    }
+
+    $this->load->model('Producao_model');
+
+    $osId = $this->input->post('os_id');
+
+    if (!$osId) {
+        show_error('OS inválida.');
+    }
+
+    $dadosProducao = [
+        'modelo'      => $this->input->post('modelo'),
+        'tecido'      => $this->input->post('tecido'),
+        'cor'         => $this->input->post('cor'),
+        'observacoes' => $this->input->post('observacoes'),
+    ];
+
+    $grade = $this->input->post('grade');
+if (!is_array($grade)) {
+    $grade = [];
+}
+
+    $tecnicas = $this->input->post('tecnicas');
+
+    $this->db->trans_start();
+
+    $this->Producao_model->saveProducao($osId, $dadosProducao);
+    $this->Producao_model->saveGrade($osId, $grade);
+    $this->Producao_model->saveTecnicas($osId, $tecnicas);
+
+    /* ==========================
+     * UPLOAD DA ARTE
+     * ========================== */
+    if (!empty($_FILES['arte_imagem']['name'])) {
+
+        $config['upload_path']   = './uploads/os_producao/';
+        $config['allowed_types'] = 'jpg|jpeg|png|webp';
+        $config['max_size']      = 4096;
+        $config['file_name']     = 'arte_os_' . $osId;
+        $config['overwrite']     = true;
+
+        $this->load->library('upload', $config);
+
+        if ($this->upload->do_upload('arte_imagem')) {
+            $file = $this->upload->data();
+            $path = 'uploads/os_producao/' . $file['file_name'];
+
+            $this->Producao_model->updateArte($osId, $path);
+        }
+    }
+
+    $this->db->trans_complete();
+
+    $this->session->set_flashdata(
+        'success',
+        'Ficha de produção salva com sucesso.'
+    );
+
+    redirect('os/visualizar/' . $osId . '#producao');
+}
+
 
     public function enviar_email()
     {

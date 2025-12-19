@@ -54,7 +54,26 @@
                     <?php endif ?>
                 </div>
             </div>
-            <div class="widget-content" id="printOs">
+
+            <ul class="nav nav-tabs" style="margin-bottom:15px">
+    <li class="active">
+        <a href="#tab-os" data-toggle="tab">
+            <i class="bx bx-file"></i> OS
+        </a>
+    </li>
+    <li>
+        <a href="#tab-producao" data-toggle="tab">
+            <i class="bx bx-buildings"></i> Produção
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+
+           <div class="tab-pane active" id="tab-os">
+           <div class="widget-content" id="printOs">
+
                 <div class="invoice-content">
                     <div class="invoice-head" style="margin-bottom: 0; margin-top:-30px">
                         <table class="table table-condensed">
@@ -68,15 +87,15 @@
                             </tbody>
                         </table>
                         <div style="margin:10px 0">
-    <strong>COMANDA:</strong>
-    <span style="font-size:22px; font-weight:bold; color:#198754;">
-        <?php echo $result->codigo_comanda ?? '—'; ?>
-    </span>
-    <br>
+                      <strong>COMANDA:</strong>
+                         <span style="font-size:22px; font-weight:bold; color:#198754;">
+                              <?php echo $result->codigo_comanda ?? '—'; ?>
+                                    </span>
+                                            <br>
 
-    <strong>Status do Pedido:</strong>
-    <?php echo $result->status_os ?? '—'; ?>
-</div>
+                                            <strong>Status do Pedido:</strong>
+                                              <?php echo $result->status_os ?? '—'; ?>
+                                                </div>
 
                         <table class="table table-condensend">
                             <tbody>
@@ -336,13 +355,195 @@
                                     echo "</td>";
                                 }
                             } ?>
-                        </table>
+                     </table>
                     </div>
                 </div>
             </div>
-        </div>
+       </div> <!-- FIM tab-os --> 
+<div class="tab-pane" id="tab-producao">
+    <div class="widget-content">
+
+        <form action="<?= site_url('os/salvarProducao') ?>"
+              method="post"
+              enctype="multipart/form-data">
+
+            <input type="hidden" name="os_id" value="<?= $result->idOs ?>">
+
+            <!-- =========================
+                 ARTE + INFO TÉCNICA
+            ========================== -->
+            <fieldset>
+                <legend><i class="bx bx-image"></i> Arte do Cliente</legend>
+
+                <?php if (!empty($producao->arte_path)): ?>
+                    <img src="<?= base_url($producao->arte_path) ?>"
+                         style="max-width:300px;border:1px solid #ccc;margin-bottom:10px">
+                <?php endif; ?>
+
+                <input type="file" name="arte_imagem" accept="image/*">
+            </fieldset>
+
+            <hr>
+
+            <fieldset>
+                <legend><i class="bx bx-info-circle"></i> Informações Técnicas</legend>
+
+                <div class="row-fluid">
+                    <div class="span3">
+                        <label>Tecido</label>
+                        <input type="text" name="tecido" class="span12"
+                               value="<?= $producao->tecido ?? '' ?>">
+                    </div>
+
+                    <div class="span3">
+                        <label>Gola</label>
+                        <input type="text" name="gola" class="span12"
+                               value="<?= $producao->gola ?? '' ?>">
+                    </div>
+
+                    <div class="span3">
+                        <label>Técnica</label>
+                        <input type="text" name="tecnica" class="span12"
+                               value="<?= $producao->tecnica ?? '' ?>">
+                    </div>
+
+                    <div class="span3">
+                        <label>Símbolo</label>
+                        <input type="text" name="simbolo" class="span12"
+                               value="<?= $producao->simbolo ?? '' ?>">
+                    </div>
+                </div>
+            </fieldset>
+
+            <hr>
+
+            <!-- =========================
+                 OBSERVAÇÃO
+            ========================== -->
+            <fieldset>
+                <legend><i class="bx bx-note"></i> Observações</legend>
+                <textarea name="observacao"
+                          class="span12"
+                          rows="3"><?= $producao->observacao ?? '' ?></textarea>
+            </fieldset>
+
+            <hr>
+
+            <!-- =========================
+                 GRADE
+            ========================== -->
+            <fieldset>
+                <legend><i class="bx bx-table"></i> Grade de Produção</legend>
+
+                <div style="margin-bottom:10px">
+                    <input type="number"
+                           id="qtdLinhas"
+                           min="1"
+                           value="1"
+                           style="width:80px">
+
+                    <button type="button"
+                            class="btn btn-info btn-mini"
+                            id="btnAddLinhas">
+                        <i class="bx bx-plus"></i> Adicionar linhas
+                    </button>
+                </div>
+
+                <table class="table table-bordered table-condensed" id="tabela-grade">
+    <thead>
+        <tr>
+            <th>QTD</th>
+            <th>NOME</th>
+            <th>ADICIONAL</th>
+            <th>TAM</th>
+            <th>Nº</th>
+            <th>MODELO</th>
+            <th>Ação</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php
+        $linhas = !empty($producaoGrade)
+            ? $producaoGrade
+            : [ [] ];
+
+        foreach ($linhas as $i => $linha):
+        ?>
+        <tr>
+            <td>
+                <input type="number"
+                       name="grade[<?= $i ?>][quantidade]"
+                       class="span12"
+                       value="<?= $linha['qtd'] ?? 1 ?>">
+            </td>
+
+            <td>
+                <input type="text"
+                       name="grade[<?= $i ?>][nome]"
+                       class="span12"
+                       value="<?= $linha['nome'] ?? '' ?>">
+            </td>
+
+            <td>
+                <input type="text"
+                       name="grade[<?= $i ?>][adicional]"
+                       class="span12"
+                       value="<?= $linha['adicional'] ?? '' ?>">
+            </td>
+
+            <td>
+                <input type="text"
+                       name="grade[<?= $i ?>][tamanho]"
+                       class="span12"
+                       value="<?= $linha['tam'] ?? '' ?>">
+            </td>
+
+            <td>
+                <input type="text"
+                       name="grade[<?= $i ?>][numero]"
+                       class="span12"
+                       value="<?= $linha['numero'] ?? '' ?>">
+            </td>
+
+            <td>
+                <select name="grade[<?= $i ?>][modelo]" class="span12">
+                    <?php foreach (['UNISSEX','FEM','JUVENIL','INFANTIL'] as $m): ?>
+                        <option value="<?= $m ?>"
+                            <?= ($linha['modelo'] ?? '') === $m ? 'selected' : '' ?>>
+                            <?= $m ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </td>
+
+            <td>
+                <button type="button"
+                        class="btn btn-danger btn-mini remover-linha">
+                    X
+                </button>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+
+                
+            </fieldset>
+
+            <hr>
+
+            <div style="text-align:right">
+                <button type="submit" class="btn btn-success">
+                    <i class="bx bx-save"></i> Salvar Ficha de Produção
+                </button>
+            </div>
+
+        </form>
     </div>
 </div>
+
+
+
 
 <?= $modalGerarPagamento ?>
 
@@ -500,3 +701,82 @@
         }
     });
 </script>
+
+
+<script>
+let indexLinha = <?= isset($linhas) ? count($linhas) : 0 ?>;
+
+function novaLinha() {
+    return `
+    <tr>
+        <td>
+            <input type="number"
+                   name="grade[${indexLinha}][quantidade]"
+                   class="span12"
+                   value="1" min="0">
+        </td>
+
+        <td>
+            <input type="text"
+                   name="grade[${indexLinha}][nome]"
+                   class="span12">
+        </td>
+
+        <td>
+            <input type="text"
+                   name="grade[${indexLinha}][adicional]"
+                   class="span12">
+        </td>
+
+        <td>
+            <input type="text"
+                   name="grade[${indexLinha}][tamanho]"
+                   class="span12">
+        </td>
+
+        <td>
+            <input type="text"
+                   name="grade[${indexLinha}][numero]"
+                   class="span12">
+        </td>
+
+        <td>
+            <select name="grade[${indexLinha}][modelo]" class="span12">
+                <option value="UNISSEX">UNISSEX</option>
+                <option value="FEM">FEM</option>
+                <option value="JUVENIL">JUVENIL</option>
+                <option value="INFANTIL">INFANTIL</option>
+            </select>
+        </td>
+
+        <td>
+            <button type="button"
+                    class="btn btn-mini btn-danger remover-linha">
+                X
+            </button>
+        </td>
+    </tr>
+    `;
+}
+
+document.getElementById('btnAddLinhas').addEventListener('click', function () {
+    let qtd = parseInt(document.getElementById('qtdLinhas').value) || 1;
+
+    for (let i = 0; i < qtd; i++) {
+        document
+            .querySelector('#tabela-grade tbody')
+            .insertAdjacentHTML('beforeend', novaLinha());
+        indexLinha++;
+    }
+});
+
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('remover-linha')) {
+        e.target.closest('tr').remove();
+    }
+});
+</script>
+
+
+
+
