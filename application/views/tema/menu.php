@@ -99,7 +99,7 @@
                 <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vCaixa')) { ?>
     <li class="<?php if (isset($menuCaixa)) { echo 'active'; }; ?>">
         <a class="tip-bottom" title="" href="<?= site_url('caixa') ?>">
-            <i class='bx bx-cash-register iconX'></i>
+            <i class="bx bx-dollar iconX"></i>
             <span class="title">Caixa</span>
             <span class="title-tooltip">Caixa</span>
         </a>
