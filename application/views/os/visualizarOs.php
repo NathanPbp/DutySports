@@ -454,11 +454,13 @@
         <tr>
             <th>QTD</th>
             <th>NOME</th>
-            <th>ADICIONAL</th>
-            <th>TAM</th>
+            <th>SUPERIOR</th>
+            <th>INFERIOR</th>
             <th>Nº</th>
-            <th>MODELO</th>
+            <th>ADICIONAL</th>
+            <th>UNISSEX</th>
             <th>Ação</th>
+
         </tr>
     </thead>
     <tbody>
@@ -470,59 +472,69 @@
         foreach ($linhas as $i => $linha):
         ?>
         <tr>
-            <td>
-                <input type="number"
-                       name="grade[<?= $i ?>][quantidade]"
-                       class="span12"
-                       value="<?= $linha['qtd'] ?? 1 ?>">
-            </td>
+    <td>
+        <input type="number"
+               name="grade[<?= $i ?>][quantidade]"
+               class="span12"
+               min="0"
+               value="<?= $linha['quantidade'] ?? '' ?>">
+    </td>
 
-            <td>
-                <input type="text"
-                       name="grade[<?= $i ?>][nome]"
-                       class="span12"
-                       value="<?= $linha['nome'] ?? '' ?>">
-            </td>
+    <td>
+        <input type="text"
+               name="grade[<?= $i ?>][nome]"
+               class="span12"
+               value="<?= $linha['nome'] ?? '' ?>">
+    </td>
 
-            <td>
-                <input type="text"
-                       name="grade[<?= $i ?>][adicional]"
-                       class="span12"
-                       value="<?= $linha['adicional'] ?? '' ?>">
-            </td>
+    <td>
+        <input type="text"
+               name="grade[<?= $i ?>][superior]"
+               class="span12"
+               placeholder="P / M / G / GG"
+               value="<?= $linha['superior'] ?? '' ?>">
+    </td>
 
-            <td>
-                <input type="text"
-                       name="grade[<?= $i ?>][tamanho]"
-                       class="span12"
-                       value="<?= $linha['tam'] ?? '' ?>">
-            </td>
+    <td>
+        <input type="text"
+               name="grade[<?= $i ?>][inferior]"
+               class="span12"
+               placeholder="36 / 38 / 40"
+               value="<?= $linha['inferior'] ?? '' ?>">
+    </td>
 
-            <td>
-                <input type="text"
-                       name="grade[<?= $i ?>][numero]"
-                       class="span12"
-                       value="<?= $linha['numero'] ?? '' ?>">
-            </td>
+    <td>
+        <input type="text"
+               name="grade[<?= $i ?>][numero]"
+               class="span12"
+               value="<?= $linha['numero'] ?? '' ?>">
+    </td>
 
-            <td>
-                <select name="grade[<?= $i ?>][modelo]" class="span12">
-                    <?php foreach (['UNISSEX','FEM','JUVENIL','INFANTIL'] as $m): ?>
-                        <option value="<?= $m ?>"
-                            <?= ($linha['modelo'] ?? '') === $m ? 'selected' : '' ?>>
-                            <?= $m ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </td>
+    <td>
+        <input type="text"
+               name="grade[<?= $i ?>][adicional]"
+               class="span12"
+               value="<?= $linha['adicional'] ?? '' ?>">
+    </td>
 
-            <td>
-                <button type="button"
-                        class="btn btn-danger btn-mini remover-linha">
-                    X
-                </button>
-            </td>
-        </tr>
+    <td>
+        <select name="grade[<?= $i ?>][modelo]" class="span12">
+            <?php foreach (['UNISSEX','FEM','MASC','INFANTIL'] as $m): ?>
+                <option value="<?= $m ?>"
+                    <?= ($linha['modelo'] ?? '') === $m ? 'selected' : '' ?>>
+                    <?= $m ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </td>
+
+    <td>
+        <button type="button"
+                class="btn btn-danger btn-mini remover-linha">
+            X
+        </button>
+    </td>
+</tr>
         <?php endforeach; ?>
     </tbody>
 </table>
@@ -710,33 +722,32 @@ function novaLinha() {
     return `
     <tr>
         <td>
-            <input type="number"
-                   name="grade[${indexLinha}][quantidade]"
-                   class="span12"
-                   value="1" min="0">
+            <input type="number" name="grade[${indexLinha}][quantidade]"
+                   class="span12" min="0">
         </td>
 
         <td>
-            <input type="text"
-                   name="grade[${indexLinha}][nome]"
+            <input type="text" name="grade[${indexLinha}][nome]"
                    class="span12">
         </td>
 
         <td>
-            <input type="text"
-                   name="grade[${indexLinha}][adicional]"
+            <input type="text" name="grade[${indexLinha}][superior]"
+                   class="span12" placeholder="P / M / G">
+        </td>
+
+        <td>
+            <input type="text" name="grade[${indexLinha}][inferior]"
+                   class="span12" placeholder="36 / 38">
+        </td>
+
+        <td>
+            <input type="text" name="grade[${indexLinha}][numero]"
                    class="span12">
         </td>
 
         <td>
-            <input type="text"
-                   name="grade[${indexLinha}][tamanho]"
-                   class="span12">
-        </td>
-
-        <td>
-            <input type="text"
-                   name="grade[${indexLinha}][numero]"
+            <input type="text" name="grade[${indexLinha}][adicional]"
                    class="span12">
         </td>
 
@@ -744,7 +755,7 @@ function novaLinha() {
             <select name="grade[${indexLinha}][modelo]" class="span12">
                 <option value="UNISSEX">UNISSEX</option>
                 <option value="FEM">FEM</option>
-                <option value="JUVENIL">JUVENIL</option>
+                <option value="MASC">MASC</option>
                 <option value="INFANTIL">INFANTIL</option>
             </select>
         </td>
@@ -755,8 +766,7 @@ function novaLinha() {
                 X
             </button>
         </td>
-    </tr>
-    `;
+    </tr>`;
 }
 
 document.getElementById('btnAddLinhas').addEventListener('click', function () {

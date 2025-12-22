@@ -39,40 +39,58 @@ class Producao_model extends CI_Model
 public function getGradeByOs($osId)
 {
     return $this->db
-       ->select('id, os_id, tamanho, quantidade, nome, adicional, numero, modelo')
+        ->select('id, os_id, quantidade, nome, superior, inferior, numero, adicional, modelo')
         ->from('os_producao_grade')
         ->where('os_id', $osId)
         ->order_by('id', 'ASC')
         ->get()
-        ->result();
+        ->result_array();
 }
+
 
     public function saveGrade($osId, $grade)
 {
-    // 1) Apaga grade antiga dessa OS (pra salvar “limpo”)
-    $this->db->where('os_id', (int)$osId)->delete('os_producao_grade');
+    // 1) Remove grade antiga da OS
+    $this->db->where('os_id', (int) $osId)
+             ->delete('os_producao_grade');
 
-    // 2) Insere novamente as linhas válidas
     if (!is_array($grade)) {
         return;
     }
 
     foreach ($grade as $linha) {
-        $tamanho = trim($linha['tamanho'] ?? '');
-        $quantidade = (int)($linha['quantidade'] ?? 0);
 
-        // ignora linha vazia
-        if ($tamanho === '' && $quantidade <= 0) {
+        $quantidade = (int) ($linha['quantidade'] ?? 0);
+        $nome       = trim($linha['nome'] ?? '');
+        $superior   = trim($linha['superior'] ?? '');
+        $inferior   = trim($linha['inferior'] ?? '');
+        $numero     = trim($linha['numero'] ?? '');
+        $adicional  = trim($linha['adicional'] ?? '');
+        $modelo     = trim($linha['modelo'] ?? '');
+
+        // ignora linha completamente vazia
+        if (
+            $quantidade <= 0 &&
+            $nome === '' &&
+            $superior === '' &&
+            $inferior === ''
+        ) {
             continue;
         }
 
         $this->db->insert('os_producao_grade', [
-            'os_id'      => (int)$osId,
-            'tamanho'    => $tamanho,
-            'quantidade' => $quantidade
+            'os_id'      => (int) $osId,
+            'quantidade' => $quantidade,
+            'nome'       => $nome,
+            'superior'   => $superior ?: null,
+            'inferior'   => $inferior ?: null,
+            'numero'     => $numero,
+            'adicional'  => $adicional,
+            'modelo'     => $modelo
         ]);
     }
 }
+
 
 
     /* ===============================
