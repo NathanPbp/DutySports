@@ -18,14 +18,14 @@ class PdfDuty extends TCPDF
         $this->emissao     = $emissao;
     }
 
-    // ==================================================
-    // CABEÇALHO (REPITE EM TODAS AS PÁGINAS)
-    // ==================================================
+    // ===============================
+    // CABEÇALHO (EM TODAS AS PÁGINAS)
+    // ===============================
     public function Header()
     {
-        // Logo (esquerda)
-        if ($this->logo && file_exists($this->logo)) {
-            $this->Image($this->logo, 10, 8, 30);
+        // Logo Duty (emitente)
+        if (!empty($this->logo) && file_exists($this->logo)) {
+            $this->Image($this->logo, 10, 8, 30, 0, '', '', '', false, 300);
         }
 
         // Título central
@@ -36,7 +36,7 @@ class PdfDuty extends TCPDF
         $this->SetFont('helvetica', '', 11);
         $this->Cell(0, 6, '#' . $this->osNumero, 0, 1, 'C');
 
-        // Dados direita
+        // Dados à direita
         $this->SetFont('helvetica', '', 9);
         $this->SetXY(140, 10);
         $this->Cell(60, 5, 'RESPONSÁVEL: ' . $this->responsavel, 0, 2, 'R');
@@ -46,9 +46,9 @@ class PdfDuty extends TCPDF
         $this->Line(10, 28, 200, 28);
     }
 
-    // ==================================================
+    // ===============================
     // RODAPÉ (PAGINAÇÃO)
-    // ==================================================
+    // ===============================
     public function Footer()
     {
         $this->SetY(-15);

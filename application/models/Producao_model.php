@@ -19,19 +19,27 @@ class Producao_model extends CI_Model
             ->row();
     }
 
-    public function saveProducao($osId, $data)
-    {
-        $exists = $this->getProducaoByOs($osId);
+   public function saveProducao($osId, $data)
+{
+    $exists = $this->getProducaoByOs($osId);
 
-        $data['os_id'] = $osId;
+    $payload = [
+        'os_id'       => $osId,
+        'modelo'      => $data['modelo'] ?? null,
+        'tecido'      => $data['tecido'] ?? null,
+        'gola'        => $data['gola'] ?? null,
+        'tecnica'     => $data['tecnica'] ?? null,
+        'simbolo'     => $data['simbolo'] ?? null,
+        'observacao'  => $data['observacao'] ?? null,
+    ];
 
-        if ($exists) {
-            $this->db->where('os_id', $osId);
-            return $this->db->update('os_producao', $data);
-        }
-
-        return $this->db->insert('os_producao', $data);
+    if ($exists) {
+        $this->db->where('os_id', $osId);
+        return $this->db->update('os_producao', $payload);
     }
+
+    return $this->db->insert('os_producao', $payload);
+}
 
     /* ===============================
      *  GRADE DE PRODUÇÃO
@@ -155,11 +163,22 @@ public function getGradeByOs($osId)
      *  IMAGEM DA ARTE
      * =============================== */
 
-    public function updateArte($osId, $path)
-    {
-        $this->db->where('os_id', $osId);
-        return $this->db->update('os_producao', [
-            'arte_imagem' => $path
-        ]);
+   public function updateArte($osId, $novoPath)
+{
+    $atual = $this->getProducaoByOs($osId);
+
+    // Remove imagem antiga se existir
+    if ($atual && !empty($atual->arte_imagem)) {
+        $oldPath = FCPATH . $atual->arte_imagem;
+        if (file_exists($oldPath)) {
+            unlink($oldPath);
+        }
     }
+
+    $this->db->where('os_id', $osId);
+    return $this->db->update('os_producao', [
+        'arte_imagem' => $novoPath
+    ]);
+}
+
 }
