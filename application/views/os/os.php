@@ -65,7 +65,7 @@
                             <th class="ph1">Responsável</th>
                             <th>Data Inicial</th>
                             <th class="ph2">Data Final</th>
-                            <th class="ph3">Venc. Garantia</th>
+                            <th class="ph3">Comanda</th>
                             <th>Valor Total</th>
                             <th>Desconto</th>
                             <th>Valor com Desconto</th>
@@ -126,27 +126,6 @@
                                         $cor = '#E0E4CC';
                                         break;
                                 }
-                                $vencGarantia = '';
-
-                                if ($r->garantia && is_numeric($r->garantia)) {
-                                    $vencGarantia = dateInterval($r->dataFinal, $r->garantia);
-                                }
-                                $corGarantia = '';
-                                if (!empty($vencGarantia)) {
-                                    $dataGarantia = explode('/', $vencGarantia);
-                                    $dataGarantiaFormatada = $dataGarantia[2] . '-' . $dataGarantia[1] . '-' . $dataGarantia[0];
-                                    if (strtotime($dataGarantiaFormatada) >= strtotime(date('d-m-Y'))) {
-                                        $corGarantia = '#4d9c79';
-                                    } else {
-                                        $corGarantia = '#f24c6f';
-                                    }
-                                } elseif ($r->garantia == "0") {
-                                    $vencGarantia = 'Sem Garantia';
-                                    $corGarantia = '';
-                                } else {
-                                    $vencGarantia = '';
-                                    $corGarantia = '';
-                                }
 
                                 echo '<tr>';
                                 echo '<td>' . $r->idOs . '</td>';
@@ -154,7 +133,7 @@
                                 echo '<td class="ph1">' . $r->nome . '</td>';
                                 echo '<td>' . $dataInicial . '</td>';
                                 echo '<td class="ph2">' . $dataFinal . '</td>';
-                                echo '<td class="ph3"><span class="badge" style="background-color: ' . $corGarantia . '; border-color: ' . $corGarantia . '">' . $vencGarantia . '</span> </td>';
+                                echo '<td class="ph3"> <span class="badge badge-info"> ' . ($r->codigo_comanda ?: '-') . '</span></td>';
                                 echo '<td>R$ ' . number_format($r->totalProdutos + $r->totalServicos, 2, ',', '.') . '</td>';                                
                                 echo '<td>R$ ' . number_format(floatval($r->desconto), 2, ',', '.') . '</td>';
                                 echo '<td>R$ ' . number_format(floatval($r->valor_desconto), 2, ',', '.') . '</td>';

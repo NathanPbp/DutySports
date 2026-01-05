@@ -10,22 +10,45 @@
                         </a>';
                     } ?>
 
-                    <div class="button-container">
-                        <a target="_blank" title="Imprimir Ordem de Serviço" class="button btn btn-mini btn-inverse"> <span class="button__icon"><i class="bx bx-printer"></i></span><span class="button__text">Imprimir</span></a>
-                        <div class="cascading-buttons">
-                            <a target="_blank" title="Impressão em Papel A4" class="button btn btn-mini btn-inverse" href="<?php echo site_url() ?>/os/imprimir/<?php echo $result->idOs; ?>">
-                                <span class="button__icon"><i class='bx bx-file'></i></span> <span class="button__text">Papel A4</span>
-                            </a>
-                            <a target="_blank" title="Impressão Cupom Não Fical" class="button btn btn-mini btn-inverse" href="<?php echo site_url() ?>/os/imprimirTermica/<?php echo $result->idOs; ?>">
-                                <span class="button__icon"><i class='bx bx-receipt'></i></span> <span class="button__text">Cupom 80mm</span>
-                            </a>
-                            <?php if ($result->garantias_id) { ?>
-                                <a target="_blank" title="Imprimir Termo de Garantia" class="button btn btn-mini btn-inverse" href="<?php echo site_url() ?>/garantias/imprimirGarantiaOs/<?php echo $result->garantias_id; ?>">
-                                    <span class="button__icon"><i class="bx bx-paperclip"></i></span> <span class="button__text">Termo Garantia</span>
-                                </a>
-                            <?php } ?>
-                        </div>
-                    </div>
+                   <div class="button-container">
+    <a target="_blank" title="Imprimir Ordem de Serviço" class="button btn btn-mini btn-inverse">
+        <span class="button__icon"><i class="bx bx-printer"></i></span>
+        <span class="button__text">Imprimir</span>
+    </a>
+
+    <div class="cascading-buttons">
+
+        <!-- OS - Papel A4 -->
+        <a target="_blank"
+           title="Impressão em Papel A4"
+           class="button btn btn-mini btn-inverse"
+           href="<?php echo site_url() ?>/os/imprimir/<?php echo $result->idOs; ?>">
+            <span class="button__icon"><i class='bx bx-file'></i></span>
+            <span class="button__text">Papel A4</span>
+        </a>
+
+        <!-- OS - Cupom -->
+        <a target="_blank"
+           title="Impressão Cupom Não Fiscal"
+           class="button btn btn-mini btn-inverse"
+           href="<?php echo site_url() ?>/os/imprimirTermica/<?php echo $result->idOs; ?>">
+            <span class="button__icon"><i class='bx bx-receipt'></i></span>
+            <span class="button__text">Cupom 80mm</span>
+        </a>
+
+        <!-- PRODUÇÃO - NOVO -->
+        <a target="_blank"
+           title="Imprimir Ficha de Produção"
+           class="button btn btn-mini btn-primary"
+           href="<?php echo site_url() ?>/os/imprimirProducao/<?php echo $result->idOs; ?>">
+            <span class="button__icon"><i class='bx bx-paint'></i></span>
+            <span class="button__text">Produção</span>
+        </a>
+
+
+    </div>
+</div>
+
 
                     <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
                         $this->load->model('os_model');
@@ -173,65 +196,7 @@
                                             <b>DATA FINAL: </b><br>
                                             <?php echo $result->dataFinal ? date('d/m/Y', strtotime($result->dataFinal)) : ''; ?>
                                         </td>
-
-                                        <td>
-                                            <?php if ($result->garantia) { ?>
-                                                <b>GARANTIA: </b><br><?php echo $result->garantia . ' dia(s)'; ?>
-                                            <?php } ?>
-                                        </td>
-
-                                        <?php if (in_array($result->status, ['Finalizado', 'Faturado', 'Orçamento', 'Aberto'])): ?>
-                                            <td>
-                                                <b>VENC. DA GARANTIA:</b><br>
-                                                <?= dateInterval($result->dataFinal, $result->garantia); ?>
-                                            </td>
-                                        <?php endif; ?>
-                                    </tr>
-                                <?php } ?>
-
-                                <?php if ($result->descricaoProduto != null) { ?>
-                                    <tr>
-                                        <td colspan="5">
-                                            <b>DESCRIÇÃO: </b>
-                                            <?php echo htmlspecialchars_decode($result->descricaoProduto) ?>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-
-                                <?php if ($result->defeito != null) { ?>
-                                    <tr>
-                                        <td colspan="5">
-                                            <b>DEFEITO APRESENTADO: </b>
-                                            <?php echo htmlspecialchars_decode($result->defeito) ?>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-
-                                <?php if ($result->observacoes != null) { ?>
-                                    <tr>
-                                        <td colspan="5">
-                                            <b>OBSERVAÇÕES: </b>
-                                            <?php echo htmlspecialchars_decode($result->observacoes) ?>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-
-                                <?php if ($result->laudoTecnico != null) { ?>
-                                    <tr>
-                                        <td colspan="5">
-                                            <b>LAUDO TÉCNICO: </b>
-                                            <?php echo htmlspecialchars_decode($result->laudoTecnico) ?>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-
-                                <?php if ($result->garantias_id != null) { ?>
-                                    <tr>
-                                        <td colspan="5">
-                                            <strong>TERMO DE GARANTIA </strong><br>
-                                            <?php echo htmlspecialchars_decode($result->textoGarantia) ?>
-                                        </td>
-                                    </tr>
+                                </tr>
                                 <?php } ?>
                             </tbody>
                         </table>
@@ -375,8 +340,8 @@
             <fieldset>
                 <legend><i class="bx bx-image"></i> Arte do Cliente</legend>
 
-                <?php if (!empty($producao->arte_path)): ?>
-                    <img src="<?= base_url($producao->arte_path) ?>"
+                <?php if (!empty($producao->arte_imagem)): ?>
+                    <img src="<?= base_url($producao->arte_imagem) ?>"
                          style="max-width:300px;border:1px solid #ccc;margin-bottom:10px">
                 <?php endif; ?>
 
@@ -433,6 +398,39 @@
                  GRADE
             ========================== -->
             <fieldset>
+<!-- =========================
+     IMPORTAÇÃO VIA WHATSAPP
+========================== -->
+<div class="well" style="margin-bottom:15px">
+    <label><strong>📥 Colar grade recebida do WhatsApp</strong></label>
+
+    <textarea id="gradeWhatsapp"
+              class="span12"
+              rows="6"
+              placeholder="Cole aqui a mensagem do WhatsApp no formato:
+QTD-NOME-SUPERIOR-INFERIOR-Nº-ADICIONAL-MODELO"></textarea>
+
+    <button type="button"
+            class="btn btn-success btn-mini"
+            id="btnConverterWhatsapp"
+            style="margin-top:8px">
+        <i class="bx bx-import"></i> Converter para grade
+    </button>
+</div>
+<!-- =========================
+     IMPORTAÇÃO VIA WHATSAPP
+========================== -->
+<div style="margin-bottom:12px;">
+    <a href="<?= site_url('exportacaoproducao/excel/' . $result->idOs) ?>"
+   class="btn btn-success btn-mini"
+   onclick="return confirm('Deseja exportar a grade de produção em Excel?')">
+    <i class="bx bx-spreadsheet"></i> Exportar Grade (Excel)
+</a>
+
+</div>
+
+
+ 
                 <legend><i class="bx bx-table"></i> Grade de Produção</legend>
 
                 <div style="margin-bottom:10px">
@@ -549,6 +547,7 @@
                     <i class="bx bx-save"></i> Salvar Ficha de Produção
                 </button>
             </div>
+            
 
         </form>
     </div>
@@ -714,43 +713,18 @@
     });
 </script>
 
-
-<script>
+<script type="text/javascript">
 let indexLinha = <?= isset($linhas) ? count($linhas) : 0 ?>;
 
 function novaLinha() {
     return `
     <tr>
-        <td>
-            <input type="number" name="grade[${indexLinha}][quantidade]"
-                   class="span12" min="0">
-        </td>
-
-        <td>
-            <input type="text" name="grade[${indexLinha}][nome]"
-                   class="span12">
-        </td>
-
-        <td>
-            <input type="text" name="grade[${indexLinha}][superior]"
-                   class="span12" placeholder="P / M / G">
-        </td>
-
-        <td>
-            <input type="text" name="grade[${indexLinha}][inferior]"
-                   class="span12" placeholder="36 / 38">
-        </td>
-
-        <td>
-            <input type="text" name="grade[${indexLinha}][numero]"
-                   class="span12">
-        </td>
-
-        <td>
-            <input type="text" name="grade[${indexLinha}][adicional]"
-                   class="span12">
-        </td>
-
+        <td><input type="number" name="grade[${indexLinha}][quantidade]" class="span12" min="0"></td>
+        <td><input type="text" name="grade[${indexLinha}][nome]" class="span12"></td>
+        <td><input type="text" name="grade[${indexLinha}][superior]" class="span12"></td>
+        <td><input type="text" name="grade[${indexLinha}][inferior]" class="span12"></td>
+        <td><input type="text" name="grade[${indexLinha}][numero]" class="span12"></td>
+        <td><input type="text" name="grade[${indexLinha}][adicional]" class="span12"></td>
         <td>
             <select name="grade[${indexLinha}][modelo]" class="span12">
                 <option value="UNISSEX">UNISSEX</option>
@@ -759,33 +733,68 @@ function novaLinha() {
                 <option value="INFANTIL">INFANTIL</option>
             </select>
         </td>
-
-        <td>
-            <button type="button"
-                    class="btn btn-mini btn-danger remover-linha">
-                X
-            </button>
-        </td>
+        <td><button type="button" class="btn btn-mini btn-danger remover-linha">X</button></td>
     </tr>`;
 }
 
+/* Adicionar linhas manualmente */
 document.getElementById('btnAddLinhas').addEventListener('click', function () {
     let qtd = parseInt(document.getElementById('qtdLinhas').value) || 1;
-
     for (let i = 0; i < qtd; i++) {
-        document
-            .querySelector('#tabela-grade tbody')
+        document.querySelector('#tabela-grade tbody')
             .insertAdjacentHTML('beforeend', novaLinha());
         indexLinha++;
     }
 });
 
+/* Remover linha */
 document.addEventListener('click', function (e) {
     if (e.target.classList.contains('remover-linha')) {
         e.target.closest('tr').remove();
     }
 });
+
+/* Converter WhatsApp */
+document.getElementById('btnConverterWhatsapp').addEventListener('click', function () {
+
+    const texto = document.getElementById('gradeWhatsapp').value.trim();
+    if (!texto) return alert('Cole a mensagem do WhatsApp.');
+
+    texto.split('\n').forEach(linha => {
+        linha = linha.trim();
+        if (!linha || linha.toUpperCase().includes('QTD')) return;
+
+        const p = linha.split('-');
+        if (p.length < 7) return;
+
+        document.querySelector('#tabela-grade tbody')
+            .insertAdjacentHTML('beforeend', novaLinha());
+
+        const row = document.querySelectorAll('#tabela-grade tbody tr')[indexLinha];
+        const n = v => (v === '*' ? '' : v.trim());
+
+        row.querySelector(`[name="grade[${indexLinha}][quantidade]"]`).value = n(p[0]);
+        row.querySelector(`[name="grade[${indexLinha}][nome]"]`).value = n(p[1]);
+        row.querySelector(`[name="grade[${indexLinha}][superior]"]`).value = n(p[2]);
+        row.querySelector(`[name="grade[${indexLinha}][inferior]"]`).value = n(p[3]);
+        row.querySelector(`[name="grade[${indexLinha}][numero]"]`).value = n(p[4]);
+        row.querySelector(`[name="grade[${indexLinha}][adicional]"]`).value = n(p[5]);
+
+        const modelo = n(p[6]).toUpperCase();
+        const select = row.querySelector(`[name="grade[${indexLinha}][modelo]"]`);
+        if ([...select.options].some(o => o.value === modelo)) {
+            select.value = modelo;
+        }
+
+        indexLinha++;
+    });
+
+    document.getElementById('gradeWhatsapp').value = '';
+});
 </script>
+
+
+
 
 
 

@@ -56,17 +56,31 @@ public function getGradeByOs($osId)
 }
 
 
-    public function saveGrade($osId, $grade)
+  public function saveGrade($osId, $grade)
 {
+    // 🔴 LOG 1 — confirma entrada no método
+    log_message('error', 'ENTROU NO saveGrade | OS_ID = ' . $osId);
+
+    // segurança
+    if (!is_array($grade)) {
+        log_message('error', 'GRADE NÃO É ARRAY');
+        return;
+    }
+
+    // 🔴 LOG 2 — quantidade de linhas recebidas
+    log_message('error', 'TOTAL DE LINHAS DA GRADE: ' . count($grade));
+
     // 1) Remove grade antiga da OS
     $this->db->where('os_id', (int) $osId)
              ->delete('os_producao_grade');
 
-    if (!is_array($grade)) {
-        return;
-    }
+    // 🔴 LOG 3 — delete executado
+    log_message('error', 'GRADE ANTIGA REMOVIDA');
 
-    foreach ($grade as $linha) {
+    foreach ($grade as $index => $linha) {
+
+        // 🔴 LOG 4 — dump da linha
+        log_message('error', 'LINHA ' . $index . ': ' . print_r($linha, true));
 
         $quantidade = (int) ($linha['quantidade'] ?? 0);
         $nome       = trim($linha['nome'] ?? '');
@@ -83,10 +97,11 @@ public function getGradeByOs($osId)
             $superior === '' &&
             $inferior === ''
         ) {
+            log_message('error', 'LINHA IGNORADA (VAZIA)');
             continue;
         }
 
-        $this->db->insert('os_producao_grade', [
+        $insert = [
             'os_id'      => (int) $osId,
             'quantidade' => $quantidade,
             'nome'       => $nome,
@@ -95,7 +110,19 @@ public function getGradeByOs($osId)
             'numero'     => $numero,
             'adicional'  => $adicional,
             'modelo'     => $modelo
-        ]);
+        ];
+
+        $this->db->insert('os_producao_grade', $insert);
+
+        // 🔴 LOG 5 — verifica erro de insert
+       // if ($this->db->affected_rows() === 0) {
+          //  log_message(
+             //   'error',
+             //   'ERRO AO INSERIR LINHA | SQL: ' . $this->db->last_query()
+       //     );
+       // } else {
+       //     log_message('error', 'LINHA INSERIDA COM SUCESSO');
+       // }
     }
 }
 

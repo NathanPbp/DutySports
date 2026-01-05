@@ -124,6 +124,16 @@ class Caixa extends MY_Controller
         $os = $this->os_model->getById($idOs);
         if (!$os) redirect('caixa');
 
+        // 🔒 fixa comanda + cliente no caixa
+$this->session->set_userdata('caixa_comanda', [
+    'os_id'        => $os->idOs,
+    'codigo'       => $os->codigo_comanda,
+    'cliente_id'   => $os->clientes_id ?? null,
+    'cliente_nome' => $os->nomeCliente
+        ?? ($os->nome ?? 'Cliente')
+]);
+
+
         $produtos = $this->os_model->getProdutos($idOs);
         $servicos = $this->os_model->getServicos($idOs);
 

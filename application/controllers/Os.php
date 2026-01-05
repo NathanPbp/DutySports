@@ -119,11 +119,7 @@ class Os extends MY_Controller
                 'dataFinal' => $dataFinal,
                 'garantia' => set_value('garantia'),
                 'garantias_id' => $termoGarantiaId,
-                'descricaoProduto' => $this->input->post('descricaoProduto'),
-                'defeito' => $this->input->post('defeito'),
                 'status' => set_value('status'),
-                'observacoes' => $this->input->post('observacoes'),
-                'laudoTecnico' => $this->input->post('laudoTecnico'),
                 'faturado' => 0,
             ];
             // dutysports COMANDA =================================== COMANDA
@@ -223,11 +219,7 @@ class Os extends MY_Controller
                 'dataFinal' => $dataFinal,
                 'garantia' => $this->input->post('garantia'),
                 'garantias_id' => $termoGarantiaId,
-                'descricaoProduto' => $this->input->post('descricaoProduto'),
-                'defeito' => $this->input->post('defeito'),
                 'status' => $this->input->post('status'),
-                'observacoes' => $this->input->post('observacoes'),
-                'laudoTecnico' => $this->input->post('laudoTecnico'),
                 'usuarios_id' => $this->input->post('usuarios_id'),
                 'clientes_id' => $this->input->post('clientes_id'),
             ];
@@ -479,6 +471,323 @@ class Os extends MY_Controller
         $this->load->view('os/imprimirOs', $this->data);
     }
 
+public function imprimirProducao($idOs = null)
+{
+    if (!$idOs || !is_numeric($idOs)) {
+        show_error('OS inválida.');
+    }
+
+    if (!$this->permission->checkPermission(
+        $this->session->userdata('permissao'),
+        'vOs'
+    )) {
+        show_error('Sem permissão.');
+    }
+
+    // MODELS
+    $this->load->model('os_model');
+    $this->load->model('Producao_model');
+    $this->load->model('mapos_model');
+    $this->load->model('usuarios_model');
+
+    $os       = $this->os_model->getById($idOs);
+    $emitente = $this->mapos_model->getEmitente();
+    $producao = $this->Producao_model->getProducaoByOs($idOs);
+    $grade    = $this->Producao_model->getGradeByOs($idOs);
+    $usuario  = $this->usuarios_model->getById($os->usuarios_id);
+
+    $this->load->library('PdfDuty');
+    $pdf = new PdfDuty('P', 'mm', 'A4', true, 'UTF-8', false);
+
+    $pdf->setDadosCabecalho(
+         FCPATH . 'assets/img/logocabecalho.jpg', // 👈 JPG
+        str_pad($os->idOs, 6, '0', STR_PAD_LEFT),
+        $usuario->nome ?? '-',
+        date('d/m/Y H:i')
+    );
+
+    $pdf->SetMargins(10, 35, 10);
+    $pdf->SetAutoPageBreak(true, 15);
+    $pdf->AddPage();
+
+    // ==================================================
+    // BLOCO — DADOS DO PEDIDO
+    // ==================================================
+    $pdf->SetFont('helvetica', '', 9);
+
+    // ==================================================
+// BLOCO — DADOS DO PEDIDO (DATA DE ENTREGA DESTACADA)
+// ==================================================
+
+$pdf->Ln(4);
+$xInicio = 10;
+$yInicio = $pdf->GetY();
+$larguraEsq = 120;
+$larguraDir = 70;
+$alturaLinha = 8;
+
+// ---------- DATA DE ENTREGA (DESTAQUE) ----------
+$pdf->SetXY($xInicio, $yInicio);
+$pdf->SetFillColor(255, 255, 0); // AMARELO
+$pdf->SetTextColor(200, 0, 0);   // VERMELHO
+$pdf->SetFont('dejavusans', 'B', 11);
+
+
+$pdf->Cell(
+    $larguraEsq,
+    $alturaLinha,
+    'DATA DE ENTREGA → ' . ($os->dataFinal ? date('d/m/Y', strtotime($os->dataFinal)) : '____/____/______'),
+    1,
+    0,
+    'L',
+    true
+);
+
+// ---------- Nº PEDIDO ----------
+$pdf->SetTextColor(0, 0, 0);
+$pdf->SetFont('helvetica', '', 9);
+
+$pdf->Cell(
+    $larguraDir,
+    $alturaLinha,
+    'Nº PEDIDO: ' . str_pad($os->idOs, 6, '0', STR_PAD_LEFT),
+    1,
+    1,
+    'L'
+);
+
+// ---------- CLIENTE ----------
+$pdf->Cell(
+    $larguraEsq,
+    $alturaLinha,
+    'CLIENTE: ' . ($os->nomeCliente ?? '—'),
+    1,
+    0,
+    'L'
+);
+
+// ---------- DATA ----------
+$pdf->Cell(
+    $larguraDir,
+    $alturaLinha,
+    'DATA: ' . date('d/m/Y'),
+    1,
+    1,
+    'L'
+);
+
+// ---------- TELEFONE ----------
+$pdf->Cell(
+    $larguraEsq,
+    $alturaLinha,
+    'TELEFONE: ' . ($os->telefone ?? '—'),
+    1,
+    0,
+    'L'
+);
+
+// ---------- VENDEDOR ----------
+$pdf->Cell(
+    $larguraDir,
+    $alturaLinha,
+    'VENDEDOR: ' . ($usuario->nome ?? '—'),
+    1,
+    1,
+    'L'
+);
+
+// Reset de cor (IMPORTANTÍSSIMO)
+$pdf->SetTextColor(0, 0, 0);
+$pdf->Ln(2);
+
+    $pdf->SetY(70);
+
+   // ==================================================
+// BLOCO — ARTE + INFORMAÇÕES  (CORRIGIDO)
+// ==================================================
+$yTopo = $pdf->GetY();
+
+// GARANTE LINHA SÓLIDA (evita tracejado “vazar” para a ARTE)
+$pdf->SetLineStyle(['width' => 0.3, 'dash' => 0]);
+
+// Cabeçalhos (barra amarela)
+$pdf->SetFillColor(255, 204, 0);
+$pdf->SetFont('helvetica', 'B', 10);
+$pdf->Cell(120, 8, 'ARTE', 1, 0, 'C', true);
+$pdf->Cell(70, 8, 'INFORMAÇÕES', 1, 1, 'C', true);
+
+// Altura total do bloco (área abaixo do cabeçalho amarelo)
+$altura = 65;
+
+// Molduras externas (SÓLIDAS)
+$pdf->Rect(10,  $yTopo + 8, 120, $altura);   // ARTE
+$pdf->Rect(130, $yTopo + 8, 70,  $altura);   // INFORMAÇÕES
+
+// ==================================================
+// BLOCO — ARTE (COM CONTROLE DE TAMANHO)
+// ==================================================
+$artePath = FCPATH . ltrim($producao->arte_imagem, '/');
+
+$arteX = 12;
+$arteY = $yTopo + 10;
+$arteW = 116;   // largura máxima da arte
+$arteH = 55;    // altura máxima da arte (NUNCA passe disso)
+
+if (!empty($producao->arte_imagem) && is_file($artePath)) {
+
+    // Pega tamanho real da imagem
+    [$imgW, $imgH] = getimagesize($artePath);
+
+    // Calcula escala proporcional
+    $scaleW = $arteW / $imgW;
+    $scaleH = $arteH / $imgH;
+    $scale  = min($scaleW, $scaleH);
+
+    $newW = $imgW * $scale;
+    $newH = $imgH * $scale;
+
+    // Centraliza dentro do box
+    $posX = $arteX + (($arteW - $newW) / 2);
+    $posY = $arteY + (($arteH - $newH) / 2);
+
+    $pdf->Image(
+        $artePath,
+        $posX,
+        $posY,
+        $newW,
+        $newH,
+        '',
+        '',
+        '',
+        false,
+        300
+    );
+
+} else {
+
+    $pdf->SetXY(10, $arteY + 22);
+    $pdf->SetFont('helvetica', 'I', 11);
+    $pdf->Cell(120, 6, 'INSERIR ARTE', 0, 0, 'C');
+}
+
+
+
+// ==========================
+// INFORMAÇÕES (DIVISAS + LINHAS PONTILHADAS)
+// ==========================
+$pdf->SetFont('helvetica', '', 9);
+$pdf->SetTextColor(0, 0, 0);
+
+$infoX   = 130;
+$infoY   = $yTopo + 8;     // topo do bloco infos (logo abaixo do amarelo)
+$infoW   = 70;
+$infoH   = $altura;
+
+$labelW  = 28;             // coluna do rótulo (esquerda)
+$valueW  = $infoW - $labelW;
+$padY    = 2;
+$secH = floor(($altura - $padY * 2) / 4);           // altura de cada “tópico” (4 tópicos = 64mm)
+
+
+$infos = [
+    ['label' => 'TECIDO:',  'value' => $producao->tecido],
+    ['label' => 'GOLA:',    'value' => $producao->gola],
+    ['label' => 'TÉCNICA:', 'value' => $producao->tecnica],
+    ['label' => 'SÍMBOLO:', 'value' => $producao->simbolo],
+];
+
+for ($i = 0; $i < count($infos); $i++) {
+
+    $secY = $infoY + $padY + ($i * $secH);
+
+    // 1) Caixa sólida do tópico (divisa entre tópicos)
+    $pdf->SetLineStyle(['width' => 0.3, 'dash' => 0]);
+    $pdf->Rect($infoX, $secY, $infoW, $secH);
+
+    // 2) Divisória vertical sólida (entre label e value)
+    $pdf->Line($infoX + $labelW, $secY, $infoX + $labelW, $secY + $secH);
+
+    // 3) Texto (label e valor)
+    $pdf->SetXY($infoX + 2, $secY + 2);
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->Cell($labelW - 4, 5, $infos[$i]['label'], 0, 0, 'L');
+
+    $pdf->SetFont('helvetica', '', 9);
+    $valor = strtoupper(trim($infos[$i]['value'] ?? ''));
+    $pdf->SetXY($infoX + $labelW + 2, $secY + 2);
+    $pdf->Cell($valueW - 4, 5, ($valor !== '' ? $valor : '-'), 0, 0, 'L');
+
+    // 4) Linhas pontilhadas “para escrever” (dentro do tópico)
+    $pdf->SetLineStyle(['width' => 0.2, 'dash' => '2,2']);
+    $pdf->Line($infoX + $labelW + 2, $secY + 8,  $infoX + $infoW - 2, $secY + 8);
+    $pdf->Line($infoX + $labelW + 2, $secY + 12, $infoX + $infoW - 2, $secY + 12);
+}
+
+// IMPORTANTÍSSIMO: volta a linha sólida pro resto do PDF
+$pdf->SetLineStyle(['width' => 0.3, 'dash' => 0]);
+
+
+    // ==================================================
+    // OBSERVAÇÕES
+    // ==================================================
+    $pdf->SetY($yTopo + 8 + $altura + 2);
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->Cell(190, 6, 'OBSERVAÇÕES', 1, 1);
+    $pdf->SetFont('helvetica', '', 9);
+    $pdf->MultiCell(190, 10, $producao->observacao ?: '-', 1);
+
+    // ==================================================
+    // GRADE DE PRODUÇÃO (OCUPA A FOLHA)
+    // ==================================================
+    $pdf->Ln(2);
+    $pdf->SetFont('helvetica', 'B', 10);
+$pdf->SetFillColor(63, 107, 191);
+$pdf->SetTextColor(255, 255, 255);
+
+// Barra azul de título
+$pdf->Cell(190, 8, 'DESCRIÇÃO', 1, 1, 'C', true);
+
+// Volta cores normais
+$pdf->SetTextColor(0, 0, 0);
+
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->Cell(12, 7, 'Qtd', 1);
+$pdf->Cell(38, 7, 'Nome', 1);
+$pdf->Cell(18, 7, 'Sup', 1);
+$pdf->Cell(18, 7, 'Inf', 1);
+$pdf->Cell(12, 7, 'Nº', 1);
+$pdf->Cell(42, 7, 'Adicional', 1);
+$pdf->Cell(50, 7, 'Modelo', 1);
+$pdf->Ln();
+
+
+    $pdf->SetFont('helvetica', '', 9);
+    $total = 0;
+
+    foreach ($grade as $l) {
+        $pdf->Cell(12, 6, $l['quantidade'], 1);
+$pdf->Cell(38, 6, $l['nome'], 1);
+$pdf->Cell(18, 6, $l['superior'], 1);
+$pdf->Cell(18, 6, $l['inferior'], 1);
+$pdf->Cell(12, 6, $l['numero'], 1);
+$pdf->Cell(42, 6, $l['adicional'], 1);
+$pdf->Cell(50, 6, $l['modelo'], 1);
+$pdf->Ln();
+
+
+        $total += (int)$l['quantidade'];
+    }
+
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->Cell(140, 7, 'TOTAL DE PEÇAS', 1);
+    $pdf->Cell(50, 7, $total, 1, 0, 'C');
+
+    $pdf->Output('Ficha_Producao_OS_' . $idOs . '.pdf', 'I');
+}
+
+
+
+
     public function imprimirTermica()
     {
         if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
@@ -507,8 +816,10 @@ class Os extends MY_Controller
         $this->load->view('os/imprimirOsTermica', $this->data);
     }
 
-    public function salvarProducao()
+   public function salvarProducao()
 {
+    log_message('error', 'FILES RECEBIDO: ' . print_r($_FILES, true));
+
     if (!$this->permission->checkPermission(
         $this->session->userdata('permissao'),
         'eOs'
@@ -524,46 +835,80 @@ class Os extends MY_Controller
         show_error('OS inválida.');
     }
 
+    /* ==========================
+     * DADOS DA FICHA
+     * ========================== */
     $dadosProducao = [
-        'modelo'      => $this->input->post('modelo'),
-        'tecido'      => $this->input->post('tecido'),
-        'cor'         => $this->input->post('cor'),
-        'observacoes' => $this->input->post('observacoes'),
+        'modelo'     => $this->input->post('modelo'),
+        'tecido'     => $this->input->post('tecido'),
+        'gola'       => $this->input->post('gola'),
+        'tecnica'    => $this->input->post('tecnica'),
+        'simbolo'    => $this->input->post('simbolo'),
+        'observacao' => $this->input->post('observacao'),
     ];
 
+    /* ==========================
+     * GRADE
+     * ========================== */
     $grade = $this->input->post('grade');
-if (!is_array($grade)) {
-    $grade = [];
-}
+    if (!is_array($grade)) {
+        $grade = [];
+    }
 
+    // 🔴 LOG 1 — confirma que a grade chegou no controller
+    //log_message('error', 'GRADE RECEBIDA NO CONTROLLER: ' . print_r($grade, true));
+
+    /* ==========================
+     * TECNICAS
+     * ========================== */
     $tecnicas = $this->input->post('tecnicas');
 
+    /* ==========================
+     * TRANSAÇÃO
+     * ========================== */
     $this->db->trans_start();
 
     $this->Producao_model->saveProducao($osId, $dadosProducao);
+
+    // 🔴 LOG 2 — confirma que vai chamar o model
+    //log_message('error', 'CHAMANDO saveGrade');
+
     $this->Producao_model->saveGrade($osId, $grade);
+
     $this->Producao_model->saveTecnicas($osId, $tecnicas);
 
-    /* ==========================
-     * UPLOAD DA ARTE
-     * ========================== */
-    if (!empty($_FILES['arte_imagem']['name'])) {
+ /* ==========================
+ * UPLOAD DA ARTE
+ * ========================== */
+if (!empty($_FILES['arte_imagem']['name'])) {
 
-        $config['upload_path']   = './uploads/os_producao/';
-        $config['allowed_types'] = 'jpg|jpeg|png|webp';
-        $config['max_size']      = 4096;
-        $config['file_name']     = 'arte_os_' . $osId;
-        $config['overwrite']     = true;
+    $config['upload_path']   = FCPATH . 'assets/uploads/os_producao/';
+    $config['allowed_types'] = 'jpg|jpeg|png|webp'; // ❌ sem avif
+    $config['max_size']      = 4096;
+    $config['file_name']     = 'arte_os_' . $osId;
+    $config['overwrite']     = true;
 
-        $this->load->library('upload', $config);
+    $this->load->library('upload');
+    $this->upload->initialize($config);
 
-        if ($this->upload->do_upload('arte_imagem')) {
-            $file = $this->upload->data();
-            $path = 'uploads/os_producao/' . $file['file_name'];
+    if ($this->upload->do_upload('arte_imagem')) {
 
-            $this->Producao_model->updateArte($osId, $path);
-        }
+        $file = $this->upload->data();
+
+        // caminho RELATIVO (para banco e PDF)
+        $path = 'assets/uploads/os_producao/' . $file['file_name'];
+
+        log_message('error', 'ARTE SALVA COM SUCESSO: ' . $path);
+
+        // salva no banco
+        $this->Producao_model->updateArte($osId, $path);
+
+    } else {
+        log_message('error', 'ERRO UPLOAD ARTE: ' . $this->upload->display_errors());
     }
+}
+
+
 
     $this->db->trans_complete();
 
@@ -574,7 +919,6 @@ if (!is_array($grade)) {
 
     redirect('os/visualizar/' . $osId . '#producao');
 }
-
 
     public function enviar_email()
     {
@@ -1281,4 +1625,21 @@ if (!is_array($grade)) {
             echo json_encode(['result' => false]);
         }
     }
+    private function cellFit($pdf, $w, $h, $text, $border = 1, $align = 'L')
+{
+    $originalFontSize = $pdf->getFontSizePt();
+    $fontSize = $originalFontSize;
+
+    // Reduz a fonte até caber na largura
+    while ($pdf->GetStringWidth($text) > ($w - 2) && $fontSize > 6) {
+        $fontSize -= 0.5;
+        $pdf->SetFontSize($fontSize);
+    }
+
+    $pdf->Cell($w, $h, $text, $border, 0, $align);
+
+    // Restaura fonte original
+    $pdf->SetFontSize($originalFontSize);
+}
+
 }

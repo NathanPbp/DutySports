@@ -1,6 +1,31 @@
-<div class="container" style="max-width:1100px;">
+<?php
+$comanda = $this->session->userdata('caixa_comanda');
 
-    <h3 style="margin-top:10px;">🧾 Caixa — Comanda <?= $os->codigo_comanda ?></h3>
+// fallback absoluto (NUNCA deixa vazio)
+$clienteNome = $comanda['cliente_nome']
+    ?? ($os->nomeCliente ?? ($os->nome ?? '-'));
+?>
+
+<div class="alert alert-info">
+    <strong>Cliente:</strong> <?= htmlspecialchars($clienteNome) ?><br>
+
+    <strong>Status OS:</strong> <?= $os->status ?><br>
+    <strong>Status Pedido:</strong> <?= $os->status_os ?><br>
+
+    <strong>Venda vinculada:</strong>
+    #<?= $venda->idVendas ?> (<?= $venda->status ?>)
+</div>
+
+
+
+    <h3 style="margin-top:10px;">
+    🧾 Caixa — Comanda <?= $os->codigo_comanda ?>
+    <small style="display:block;margin-top:6px;color:#555;">
+        Cliente: <strong><?= htmlspecialchars($clienteNome) ?></strong>
+    </small>
+</h3>
+
+
 
     <?php $isRelatorio = ($this->uri->segment(2) === 'relatorio'); ?>
     <ul class="nav nav-tabs" style="margin: 10px 0 15px;">
@@ -12,15 +37,18 @@
         </li>
     </ul>
 
-    <div class="alert alert-info">
-        <strong>Cliente:</strong>
-        <?= ($os->nomeCliente ?? ($os->nome ?? '-')) ?><br>
+    <?php $comanda = $this->session->userdata('caixa_comanda'); ?>
 
-        <strong>Status OS:</strong> <?= $os->status ?><br>
-        <strong>Status Pedido:</strong> <?= $os->status_os ?><br>
+<?php if ($comanda): ?>
+<div class="alert alert-info">
+    <strong>Cliente:</strong> <?= htmlspecialchars($comanda['cliente_nome']) ?><br>
+    <strong>Status OS:</strong> <?= $os->status ?><br>
+    <strong>Status Pedido:</strong> <?= $os->status_os ?><br>
+    <strong>Venda vinculada:</strong>
+        #<?= $venda->idVendas ?> (<?= $venda->status ?>)
+</div>
+<?php endif; ?>
 
-        <strong>Venda vinculada:</strong> #<?= $venda->idVendas ?> (<?= $venda->status ?>)
-    </div>
 
     <!-- PRODUTOS -->
     <h4>Produtos</h4>

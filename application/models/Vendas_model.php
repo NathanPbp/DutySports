@@ -14,56 +14,81 @@ class Vendas_model extends CI_Model
     }
 
     public function get($table, $fields, $where = [], $perpage = 0, $start = 0, $one = false, $array = 'array')
-    {
-        $lista_clientes = [];
-        if ($where) {
-            if (array_key_exists('pesquisa', $where)) {
-                $this->db->select('idClientes');
-                $this->db->like('nomeCliente', $where['pesquisa']);
-                $this->db->limit(25);
-                $clientes = $this->db->get('clientes')->result();
+{
+    $lista_clientes = [];
 
-                foreach ($clientes as $c) {
-                    array_push($lista_clientes, $c->idClientes);
-                }
-            }
+    // ============================
+    // BUSCA POR CLIENTE (como já funcionava)
+    // ============================
+    if ($where && array_key_exists('pesquisa', $where)) {
+        $this->db->select('idClientes');
+        $this->db->like('nomeCliente', $where['pesquisa']);
+        $this->db->limit(25);
+        $clientes = $this->db->get('clientes')->result();
+
+        foreach ($clientes as $c) {
+            $lista_clientes[] = $c->idClientes;
         }
-        $this->db->select($fields . ', clientes.nomeCliente, clientes.idClientes');
-        $this->db->from($table);
-        $this->db->limit($perpage, $start);
-        $this->db->join('clientes', 'clientes.idClientes = ' . $table . '.clientes_id');
-        $this->db->join('usuarios', 'usuarios.idUsuarios = ' . $table . '.usuarios_id');
-        $this->db->order_by('idVendas', 'desc');
-        
-        // condicionais da pesquisa
-        if ($where) {
-            // condicional de status
-            if (array_key_exists('status', $where)) {
-                $this->db->where_in('vendas.status', $where['status']);
-            }
-
-            // condicional de clientes
-            if (array_key_exists('pesquisa', $where)) {
-                if ($lista_clientes != null) {
-                    $this->db->where_in('vendas.clientes_id', $lista_clientes);
-                }
-            }
-
-            // condicional data Venda
-            if (array_key_exists('de', $where)) {
-                $this->db->where('vendas.dataVenda >=', $where['de']);
-            }
-            // condicional data final
-            if (array_key_exists('ate', $where)) {
-                $this->db->where('vendas.dataVenda <=', $where['ate']);
-            }
-        }
-        $query = $this->db->get();
-
-        $result = !$one ? $query->result() : $query->row();
-
-        return $result;
     }
+
+    // ============================
+    // QUERY PRINCIPAL
+    // ============================
+    $this->db->select($fields . ', clientes.nomeCliente, clientes.idClientes, os.codigo_comanda');
+    $this->db->from($table);
+    $this->db->join('clientes', 'clientes.idClientes = ' . $table . '.clientes_id');
+    $this->db->join('usuarios', 'usuarios.idUsuarios = ' . $table . '.usuarios_id');
+    $this->db->join('os', 'os.idOs = vendas.os_id', 'left');
+    $this->db->order_by('idVendas', 'desc');
+    $this->db->limit($perpage, $start);
+
+    // ============================
+    // FILTROS
+    // ============================
+    if ($where) {
+
+        // status
+        if (array_key_exists('status', $where)) {
+            $this->db->where_in('vendas.status', $where['status']);
+        }
+
+        // data inicial
+        if (array_key_exists('de', $where)) {
+            $this->db->where('vendas.dataVenda >=', $where['de']);
+        }
+
+        // data final
+        if (array_key_exists('ate', $where)) {
+            $this->db->where('vendas.dataVenda <=', $where['ate']);
+        }
+
+        // ============================
+        // 🔍 BUSCA POR CLIENTE OU COMANDA
+        // ============================
+        if (array_key_exists('pesquisa', $where) && !empty($where['pesquisa'])) {
+            $this->db->group_start();
+
+            // clientes encontrados
+            if (!empty($lista_clientes)) {
+                $this->db->where_in('vendas.clientes_id', $lista_clientes);
+            }
+
+            // busca por comanda
+            $this->db->or_like('os.codigo_comanda', $where['pesquisa']);
+
+            $this->db->group_end();
+        }
+    }
+
+    $query = $this->db->get();
+
+    if (!$query) {
+        return [];
+    }
+
+    return !$one ? $query->result() : $query->row();
+}
+
 
     public function getVendas($table, $fields, $where = [], $perpage = 0, $start = 0, $one = false, $array = 'array')
     {

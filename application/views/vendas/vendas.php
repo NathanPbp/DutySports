@@ -59,7 +59,7 @@
                         <th>Cliente</th>
                         <th>Vendedor</th>
                         <th>Data da Venda</th>
-                        <th>Venc. da Garantia</th>
+                        <th>Comanda</th>
                         <th>Valor Total</th>
                         <th>Desconto</th>
                         <th>Valor com Desconto</th>
@@ -78,19 +78,6 @@
                         }
                         foreach ($results as $r) {
                             $dataVenda = date(('d/m/Y'), strtotime($r->dataVenda));
-                            $vencGarantia = '';
-                            
-                            if ($r->garantia && is_numeric($r->garantia)) {
-                                $vencGarantia = dateInterval($r->dataVenda, $r->garantia);
-                            }
-                            $corGarantia = '';
-                            if (!empty($vencGarantia)) {
-                                $dataGarantia = explode('/', $vencGarantia);
-                                $dataGarantiaFormatada = $dataGarantia[2] . '-' . $dataGarantia[1] . '-' . $dataGarantia[0];
-                                $corGarantia = (strtotime($dataGarantiaFormatada) >= strtotime(date('d-m-Y'))) ? '#4d9c79' : '#f24c6f';
-                            } elseif ($r->garantia == "0") {
-                                $vencGarantia = 'Sem Garantia';
-                            }
 
                             $faturado = ($r->faturado == 1) ? 'Sim' : 'Não';
                             $corStatus = match($r->status) {
@@ -111,7 +98,16 @@
                             echo '<td><a href="' . base_url() . 'index.php/clientes/visualizar/' . $r->idClientes . '">' . $r->nomeCliente . '</a></td>';
                             echo '<td class="ph1">' . $r->nome . '</td>';
                             echo '<td>' . $dataVenda . '</td>';
-                            echo '<td class="ph3"><span class="badge" style="background-color: ' . $corGarantia . '; border-color: ' . $corGarantia . '">' . $vencGarantia . '</span> </td>';
+                            echo '<td>';
+
+if (!empty($r->codigo_comanda)) {
+    echo '<span class="badge badge-info">' . $r->codigo_comanda . '</span>';
+} else {
+    echo '<span class="badge badge-secondary">—</span>';
+}
+
+echo '</td>';
+
 
                             if ($r->faturado == 1) {
                                 echo '<td>R$ ' . number_format($r->valorTotal, 2, ',', '.') . '</td>';

@@ -62,6 +62,20 @@
                         </a>
                     </li>
                 <?php } ?>
+                <!-- ESTOQUE -->
+<?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vProduto')) { ?>
+    <li class="<?php if (isset($menuEstoque)) {
+        echo 'active';
+    }; ?>">
+        <a class="tip-bottom" title="" href="<?= site_url('estoque_itens') ?>">
+            <i class='bx bx-box iconX'></i>
+            <span class="title">Estoque</span>
+            <span class="title-tooltip">Estoque</span>
+        </a>
+    </li>
+<?php } ?>
+                 <!-- FIM ESTOQUE -->
+                
 
                 <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vServico')) { ?>
                     <li class="<?php if (isset($menuServicos)) {
