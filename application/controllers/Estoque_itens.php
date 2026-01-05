@@ -2,39 +2,39 @@
 
 class Estoque_itens extends MY_Controller
 {
-   public function __construct()
-{
-    parent::__construct();
+    public function __construct()
+    {
+        parent::__construct();
 
-    $this->load->model('Estoque_itens_model', 'estoque_itens_model');
-    $this->load->model('Estoque_setores_model', 'estoque_setores_model');
+        // MODELS
+        $this->load->model('Estoque_itens_model', 'estoque_itens_model');
+        $this->load->model('Estoque_setores_model', 'estoque_setores_model');
 
-    $this->data['menuEstoque'] = 'Estoque';
-}
+        // ativa menu
+        $this->data['menuEstoque'] = 'Estoque';
+    }
 
+    /**
+     * LISTAGEM
+     */
+    public function index()
+    {
+        $this->data['itens'] = $this->estoque_itens_model->getAll();
+        $this->data['view']  = 'estoque/itens/listar';
 
- public function index()
-{
-    $this->data['itens'] = $this->estoque_itens_model->getAll();
+        return $this->layout('estoque/index');
+    }
 
-    $this->data['view'] = 'estoque/itens/listar';
-
-    return $this->layout('estoque/index');
-}
-
-
-
-
-
-
+    /**
+     * ADICIONAR
+     */
     public function adicionar()
     {
         $this->data['menuEstoqueItens'] = 'Estoque';
-
         $this->data['setores'] = $this->estoque_setores_model->getAll();
 
-
         if ($this->input->post()) {
+
             $data = [
                 'nome'             => trim($this->input->post('nome')),
                 'descricao'        => $this->input->post('descricao'),
@@ -49,25 +49,31 @@ class Estoque_itens extends MY_Controller
                 redirect('estoque_itens/adicionar');
             }
 
-            $this->Estoque_itens_model->insert($data);
-            $this->session->set_flashdata('success', 'Item cadastrado.');
+            $this->estoque_itens_model->insert($data);
+            $this->session->set_flashdata('success', 'Item cadastrado com sucesso.');
             redirect('estoque_itens');
         }
 
         $this->data['view'] = 'estoque/itens/adicionar';
-        return $this->layout();
+        return $this->layout('estoque/index');
     }
 
+    /**
+     * EDITAR (BOTÃO LÁPIS)
+     */
     public function editar($id)
-    { 
+    {
         $this->data['menuEstoqueItens'] = 'Estoque';
 
-        $item = $this->Estoque_itens_model->getById($id);
-        if (!$item) redirect('estoque_itens');
+        $item = $this->estoque_itens_model->getById($id);
+        if (!$item) {
+            redirect('estoque_itens');
+        }
 
-        $this->data['setores'] = $this->Estoque_setores_model->getAll();
+        $this->data['setores'] = $this->estoque_setores_model->getAll();
 
         if ($this->input->post()) {
+
             $data = [
                 'nome'           => trim($this->input->post('nome')),
                 'descricao'      => $this->input->post('descricao'),
@@ -76,20 +82,24 @@ class Estoque_itens extends MY_Controller
                 'estoque_minimo' => $this->input->post('estoque_minimo') ?: 0
             ];
 
-            $this->Estoque_itens_model->update($id, $data);
-            $this->session->set_flashdata('success', 'Item atualizado.');
+            $this->estoque_itens_model->update($id, $data);
+            $this->session->set_flashdata('success', 'Item atualizado com sucesso.');
             redirect('estoque_itens');
         }
 
         $this->data['item'] = $item;
         $this->data['view'] = 'estoque/itens/editar';
-        return $this->layout();
+
+        return $this->layout('estoque/index');
     }
 
+    /**
+     * EXCLUIR
+     */
     public function excluir($id)
     {
-        $this->Estoque_itens_model->delete($id);
-        $this->session->set_flashdata('success', 'Item removido.');
+        $this->estoque_itens_model->delete($id);
+        $this->session->set_flashdata('success', 'Item removido com sucesso.');
         redirect('estoque_itens');
     }
 }
