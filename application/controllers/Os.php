@@ -1356,7 +1356,7 @@ public function exportarGradeExcel($producaoId)
             } else {
                 $upload_data = $this->upload->data();
 
-                // Gera um nome de arquivo aleatório mantendo a extensão original
+                // Gera um nome de arquivo aleatório mantendo a extensão original1
                 $new_file_name = uniqid() . '.' . pathinfo($upload_data['file_name'], PATHINFO_EXTENSION);
                 $new_file_path = $upload_data['file_path'] . $new_file_name;
 

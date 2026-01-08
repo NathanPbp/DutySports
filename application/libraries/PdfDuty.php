@@ -14,7 +14,7 @@ class PdfDuty extends TCPDF
 
    public function setDadosCabecalho($logo, $osNumero, $responsavel, $emissao)
 {
-    // Normaliza caminho para Windows/Linux e tenta resolver path real
+    // Normaliza caminho para Windows/Linux e tenta resolver path real1
     if (!empty($logo)) {
         $logo = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $logo);
 

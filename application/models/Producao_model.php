@@ -50,7 +50,7 @@
 
             ];
 
-            // UPDATE
+            // UPDATE1
             if ($producaoId) {
                 $this->db->where('id', $producaoId);
                 $this->db->update('os_producao', $payload);
