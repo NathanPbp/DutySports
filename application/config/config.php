@@ -44,7 +44,8 @@ date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'America/Sao_Paulo');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'https://sistema.dutysports.store/';
+$config['base_url'] = 'http://localhost/mapos/';
+
 /*
 |--------------------------------------------------------------------------
 | Index File

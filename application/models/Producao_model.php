@@ -1,211 +1,183 @@
-<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+    <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-class Producao_model extends CI_Model
-{
-    public function __construct()
+    class Producao_model extends CI_Model
     {
-        parent::__construct();
-    }
+        public function __construct()
+        {
+            parent::__construct();
+        }
 
-    /* ===============================
-     *  FICHA DE PRODUÇÃO
-     * =============================== */
+        /* ===============================
+        *  PRODUÇÃO (GUIAS)
+        * =============================== */
 
-    public function getProducaoByOs($osId)
-    {
-        return $this->db
-            ->where('os_id', $osId)
-            ->get('os_producao')
-            ->row();
-    }
+        public function getProducoesByOs($osId)
+        {
+            return $this->db
+                ->where('os_id', $osId)
+                ->order_by('numero_guia', 'ASC')
+                ->get('os_producao')
+                ->result();
+        }
 
-   public function saveProducao($osId, $data)
+        public function getProducaoById($producaoId)
+        {
+            return $this->db
+                ->where('id', $producaoId)
+                ->get('os_producao')
+                ->row();
+        }
+
+        public function getNextNumeroGuia($osId)
+        {
+            $this->db->select_max('numero_guia');
+            $this->db->where('os_id', $osId);
+            $row = $this->db->get('os_producao')->row();
+
+            return ($row && $row->numero_guia) ? $row->numero_guia + 1 : 1;
+        }
+
+        public function saveProducao($osId, $data, $producaoId = null)
+        {
+            $payload = [
+                'modelo'     => $data['modelo'] ?? null,
+                'tecido'     => $data['tecido'] ?? null,
+                'gola'       => $data['gola'] ?? null,
+                'tecnica'    => $data['tecnica'] ?? null,
+                'simbolo'    => $data['simbolo'] ?? null,
+                'observacao' => $data['observacao'] ?? null,
+                'prioridade' => $data['prioridade'] ?? null,
+
+            ];
+
+            // UPDATE
+            if ($producaoId) {
+                $this->db->where('id', $producaoId);
+                $this->db->update('os_producao', $payload);
+                return $producaoId;
+            }
+
+            // INSERT (nova guia)
+            $payload['os_id'] = $osId;
+            $payload['numero_guia'] = $this->getNextNumeroGuia($osId);
+
+            $this->db->insert('os_producao', $payload);
+            return $this->db->insert_id();
+        }
+
+        /* ===============================
+        *  GRADE DE PRODUÇÃO
+        * =============================== */
+
+        public function getGradeByProducao($producaoId)
+        {
+            return $this->db
+                ->where('producao_id', $producaoId)
+                ->order_by('id', 'ASC')
+                ->get('os_producao_grade')
+                ->result_array();
+        }
+
+       public function saveGrade($producaoId, $osId, $grade)
 {
-    $exists = $this->getProducaoByOs($osId);
-
-    $payload = [
-        'os_id'       => $osId,
-        'modelo'      => $data['modelo'] ?? null,
-        'tecido'      => $data['tecido'] ?? null,
-        'gola'        => $data['gola'] ?? null,
-        'tecnica'     => $data['tecnica'] ?? null,
-        'simbolo'     => $data['simbolo'] ?? null,
-        'observacao'  => $data['observacao'] ?? null,
-    ];
-
-    if ($exists) {
-        $this->db->where('os_id', $osId);
-        return $this->db->update('os_producao', $payload);
+    if (!$producaoId || !$osId) {
+        return false;
     }
 
-    return $this->db->insert('os_producao', $payload);
-}
+    // Remove grade antiga
+    $this->db->where('producao_id', $producaoId);
+    $this->db->delete('os_producao_grade');
 
-    /* ===============================
-     *  GRADE DE PRODUÇÃO
-     * =============================== */
-public function getGradeByOs($osId)
-{
-    return $this->db
-        ->select('id, os_id, quantidade, nome, superior, inferior, numero, adicional, modelo')
-        ->from('os_producao_grade')
-        ->where('os_id', $osId)
-        ->order_by('id', 'ASC')
-        ->get()
-        ->result_array();
-}
-
-
-  public function saveGrade($osId, $grade)
-{
-    // 🔴 LOG 1 — confirma entrada no método
-    log_message('error', 'ENTROU NO saveGrade | OS_ID = ' . $osId);
-
-    // segurança
-    if (!is_array($grade)) {
-        log_message('error', 'GRADE NÃO É ARRAY');
-        return;
+    if (empty($grade)) {
+        return true;
     }
 
-    // 🔴 LOG 2 — quantidade de linhas recebidas
-    log_message('error', 'TOTAL DE LINHAS DA GRADE: ' . count($grade));
+    foreach ($grade as $linha) {
 
-    // 1) Remove grade antiga da OS
-    $this->db->where('os_id', (int) $osId)
-             ->delete('os_producao_grade');
-
-    // 🔴 LOG 3 — delete executado
-    log_message('error', 'GRADE ANTIGA REMOVIDA');
-
-    foreach ($grade as $index => $linha) {
-
-        // 🔴 LOG 4 — dump da linha
-        log_message('error', 'LINHA ' . $index . ': ' . print_r($linha, true));
-
-        $quantidade = (int) ($linha['quantidade'] ?? 0);
-        $nome       = trim($linha['nome'] ?? '');
-        $superior   = trim($linha['superior'] ?? '');
-        $inferior   = trim($linha['inferior'] ?? '');
-        $numero     = trim($linha['numero'] ?? '');
-        $adicional  = trim($linha['adicional'] ?? '');
-        $modelo     = trim($linha['modelo'] ?? '');
-
-        // ignora linha completamente vazia
-        if (
-            $quantidade <= 0 &&
-            $nome === '' &&
-            $superior === '' &&
-            $inferior === ''
-        ) {
-            log_message('error', 'LINHA IGNORADA (VAZIA)');
+        if (empty($linha['quantidade']) && empty($linha['nome'])) {
             continue;
         }
 
-        $insert = [
-            'os_id'      => (int) $osId,
-            'quantidade' => $quantidade,
-            'nome'       => $nome,
-            'superior'   => $superior ?: null,
-            'inferior'   => $inferior ?: null,
-            'numero'     => $numero,
-            'adicional'  => $adicional,
-            'modelo'     => $modelo
+        $data = [
+            'producao_id' => $producaoId,
+            'os_id'       => $osId, // ✅ AGORA NÃO É MAIS NULL
+            'quantidade'  => $linha['quantidade'] ?? 0,
+            'nome'        => $linha['nome'] ?? null,
+            'superior'    => $linha['superior'] ?? null,
+            'inferior'    => $linha['inferior'] ?? null,
+            'numero'      => $linha['numero'] ?? null,
+            'adicional'   => $linha['adicional'] ?? null,
+            'modelo'      => $linha['modelo'] ?? null,
         ];
 
-        $this->db->insert('os_producao_grade', $insert);
-
-        // 🔴 LOG 5 — verifica erro de insert
-       // if ($this->db->affected_rows() === 0) {
-          //  log_message(
-             //   'error',
-             //   'ERRO AO INSERIR LINHA | SQL: ' . $this->db->last_query()
-       //     );
-       // } else {
-       //     log_message('error', 'LINHA INSERIDA COM SUCESSO');
-       // }
+        $this->db->insert('os_producao_grade', $data);
     }
+
+    return true;
 }
 
 
 
-    /* ===============================
-     *  TÉCNICAS DE PRODUÇÃO
-     * =============================== */
 
-    public function getTecnicas()
-    {
-        return $this->db
-            ->where('ativo', 1)
-            ->order_by('tipo, nome')
-            ->get('producao_tecnicas')
-            ->result();
-    }
+        /* ===============================
+        *  TÉCNICAS
+        * =============================== */
 
-    public function getTecnicasByOs($osId)
-    {
-        return $this->db
-            ->select('t.*')
-            ->from('os_producao_tecnicas opt')
-            ->join('producao_tecnicas t', 't.id = opt.tecnica_id')
-            ->where('opt.os_id', $osId)
-            ->get()
-            ->result();
-    }
-
-    public function saveTecnicas($osId, $tecnicas)
-    {
-        // remove técnicas antigas
-        $this->db->where('os_id', $osId)->delete('os_producao_tecnicas');
-
-        if (!is_array($tecnicas)) {
-            return;
+        public function getTecnicas()
+        {
+            return $this->db
+                ->where('ativo', 1)
+                ->order_by('tipo, nome')
+                ->get('producao_tecnicas')
+                ->result();
         }
 
-        foreach ($tecnicas as $tecnicaId) {
-            $this->db->insert('os_producao_tecnicas', [
-                'os_id'      => $osId,
-                'tecnica_id' => $tecnicaId
+        public function getTecnicasByProducao($producaoId)
+        {
+            return $this->db
+                ->select('t.*')
+                ->from('os_producao_tecnicas opt')
+                ->join('producao_tecnicas t', 't.id = opt.tecnica_id')
+                ->where('opt.producao_id', $producaoId)
+                ->get()
+                ->result();
+        }
+
+        public function saveTecnicas($producaoId, $tecnicas)
+        {
+            $this->db->where('producao_id', $producaoId)
+                    ->delete('os_producao_tecnicas');
+
+            if (!is_array($tecnicas)) {
+                return;
+            }
+
+            foreach ($tecnicas as $tecnicaId) {
+                $this->db->insert('os_producao_tecnicas', [
+                    'producao_id' => $producaoId,
+                    'tecnica_id'  => $tecnicaId
+                ]);
+            }
+        }
+
+        /* ===============================
+        *  ARTE DA PRODUÇÃO
+        * =============================== */
+
+        public function updateArte($producaoId, $novoPath)
+        {
+            $atual = $this->getProducaoById($producaoId);
+
+            if ($atual && !empty($atual->arte_imagem)) {
+                $oldPath = FCPATH . $atual->arte_imagem;
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+
+            $this->db->where('id', $producaoId);
+            $this->db->update('os_producao', [
+                'arte_imagem' => $novoPath
             ]);
         }
     }
-
-    /* ===============================
-     *  VÍNCULO SERVIÇO → TÉCNICA
-     * =============================== */
-
-    public function getTecnicasByServicos($servicosIds)
-    {
-        if (empty($servicosIds)) {
-            return [];
-        }
-
-        return $this->db
-            ->select('DISTINCT(tecnica_id)')
-            ->where_in('servico_id', $servicosIds)
-            ->get('servico_tecnica_vinculo')
-            ->result();
-    }
-
-    /* ===============================
-     *  IMAGEM DA ARTE
-     * =============================== */
-
-   public function updateArte($osId, $novoPath)
-{
-    $atual = $this->getProducaoByOs($osId);
-
-    // Remove imagem antiga se existir
-    if ($atual && !empty($atual->arte_imagem)) {
-        $oldPath = FCPATH . $atual->arte_imagem;
-        if (file_exists($oldPath)) {
-            unlink($oldPath);
-        }
-    }
-
-    $this->db->where('os_id', $osId);
-    return $this->db->update('os_producao', [
-        'arte_imagem' => $novoPath
-    ]);
-}
-
-}

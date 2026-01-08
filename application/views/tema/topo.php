@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<?php
+$configuration = $configuration ?? [];
+$configuration['app_name']  = $configuration['app_name']  ?? 'DUTY SPORTS';
+$configuration['app_theme'] = $configuration['app_theme'] ?? '';
+?>
 
 <head>
   <title><?= $configuration['app_name'] ?: 'DUTY SPORTS' ?></title>

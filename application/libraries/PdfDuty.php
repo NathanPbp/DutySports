@@ -9,6 +9,8 @@ class PdfDuty extends TCPDF
     protected $osNumero;
     protected $responsavel;
     protected $emissao;
+    protected $prioridade;
+
 
    public function setDadosCabecalho($logo, $osNumero, $responsavel, $emissao)
 {
@@ -36,9 +38,41 @@ class PdfDuty extends TCPDF
     $this->responsavel = $responsavel;
     $this->emissao     = $emissao;
 }
+public function setPrioridade($prioridade)
+{
+    $this->prioridade = $prioridade;
+}
+
 
 public function Header()
-{
+{// ===============================
+// PRIORIDADE (TAG NO CABEÇALHO)
+// ===============================
+if (!empty($this->prioridade)) {
+
+    // posição: abaixo de RESPONSÁVEL / EMISSÃO
+    $this->SetFont('helvetica', 'B', 9);
+    $this->SetFillColor(220, 53, 69); // vermelho
+    $this->SetTextColor(0, 0, 0);     // preto
+
+    // X alinhado à direita | Y logo abaixo do bloco direito
+    $this->SetXY(140, 18);
+
+    $this->Cell(
+        50,
+        6,
+        '[ ' . strtoupper($this->prioridade) . ' ]',
+        1,
+        0,
+        'C',
+        true
+    );
+
+    // reset de cores
+    $this->SetTextColor(0, 0, 0);
+}
+
+
     // ===============================
     // LOGO (mais para cima)
     // ===============================
@@ -102,4 +136,18 @@ public function Header()
             'C'
         );
     }
+    public function setNumeracaoGuia($atual, $total)
+{
+    $this->SetFont('helvetica', 'B', 9);
+    $this->SetXY(160, 10);
+    $this->Cell(
+        40,
+        6,
+        'GUIA ' . $atual . ' / ' . $total,
+        0,
+        0,
+        'R'
+    );
+}
+
 }
