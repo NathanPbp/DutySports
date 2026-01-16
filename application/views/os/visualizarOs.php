@@ -357,7 +357,8 @@
                                 <legend><i class="bx bx-image"></i> Arte do Cliente</legend>
 
                                 <?php if (!empty($producaoAtual->arte_imagem)): ?>
-                                    <img src="<?= base_url($producaoAtual->arte_imagem) ?>"
+                                  <img src="<?= base_url($producaoAtual->arte_imagem) . '?v=' . time() ?>"
+
                                          style="max-width:300px;border:1px solid #ccc;margin-bottom:10px">
                                 <?php endif; ?>
 

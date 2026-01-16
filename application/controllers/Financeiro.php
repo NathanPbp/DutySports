@@ -34,19 +34,39 @@ class Financeiro extends MY_Controller
         $status = $this->input->get('status');
         $valor_desconto = $this->input->get('valor_desconto');
         $desconto = $this->input->get('desconto');
-
         $periodo = $this->input->get('periodo');
+        $origem   = $this->input->get('origem');
+        $vendedor = $this->input->get('vendedor');
+      
+        if (!empty($origem)) {
+    if (empty($where)) {
+        $where = "origem = '$origem'";
+    } else {
+        $where .= " AND origem = '$origem'";
+    }
+}
+
+if (!empty($vendedor)) {
+    if (empty($where)) {
+        $where = "vendedor LIKE '%$vendedor%'";
+    } else {
+        $where .= " AND vendedor LIKE '%$vendedor%'";
+    }
+}
+
+
 
         if (! empty($vencimento_de)) {
-            $date = DateTime::createFromFormat('d/m/Y', $vencimento_de);
-
-            if (empty($where)) {
-                $dateString = $date->format('Y-m-d');
-                $where = "data_vencimento >= '$dateString'";
-            } else {
-                $where .= " AND data_vencimento >= '$date'";
-            }
-        }
+$date = DateTime::createFromFormat('d/m/Y', $vencimento_de);
+if ($date) {
+    $dateString = $date->format('Y-m-d');
+    if (empty($where)) {
+        $where = "data_vencimento >= '$dateString'";
+    } else {
+        $where .= " AND data_vencimento >= '$dateString'";
+    }
+ }
+}
 
         if (! empty($vencimento_ate)) {
             $date = DateTime::createFromFormat('d/m/Y', $vencimento_ate)->format('Y-m-d');
@@ -156,6 +176,8 @@ class Financeiro extends MY_Controller
                 'forma_pgto' => $this->input->post('formaPgto'),
                 'tipo' => set_value('tipo'),
                 'observacoes' => set_value('observacoes'),
+                'origem'   => $this->input->post('origem'),
+                'vendedor' => $this->input->post('vendedor'),
                 'usuarios_id' => $this->session->userdata('id_admin'),
             ];
             if (set_value('idFornecedor')) {
@@ -269,6 +291,8 @@ class Financeiro extends MY_Controller
                         'observacoes' => $this->input->post('observacoes_parc'),
                         'forma_pgto' => $this->input->post('formaPgto_parc'),
                         'tipo' => $this->input->post('tipo_parc'),
+                        'origem'   => $this->input->post('origem'),
+                        'vendedor' => $this->input->post('vendedor'),
                         'usuarios_id' => $this->session->userdata('id_admin'),
                     ];
 
@@ -298,6 +322,8 @@ class Financeiro extends MY_Controller
                     'observacoes' => $this->input->post('observacoes_parc'),
                     'forma_pgto' => $this->input->post('formaPgto_parc'),
                     'tipo' => $this->input->post('tipo_parc'),
+                    'origem'   => $this->input->post('origem'),
+                    'vendedor' => $this->input->post('vendedor'),
                     'usuarios_id' => $this->session->userdata('id_admin'),
                 ];
                 // if (empty($data['valor_desconto'])) {
@@ -335,6 +361,8 @@ class Financeiro extends MY_Controller
                         'observacoes' => $this->input->post('observacoes_parc'),
                         'forma_pgto' => $this->input->post('formaPgto_parc'),
                         'tipo' => $this->input->post('tipo_parc'),
+                        'origem'   => $this->input->post('origem'),
+                        'vendedor' => $this->input->post('vendedor'),
                         'usuarios_id' => $this->session->userdata('id_admin'),
 
                     ];
@@ -486,6 +514,8 @@ class Financeiro extends MY_Controller
                 'forma_pgto' => $this->input->post('formaPgto'),
                 'tipo' => $this->input->post('tipo'),
                 'observacoes' => $this->input->post('observacoes'),
+                'origem'   => $this->input->post('origem'),
+                'vendedor' => $this->input->post('vendedor'),
                 'usuarios_id' => $this->session->userdata('id_admin'),
             ];
 

@@ -8,6 +8,7 @@
 <!--end-Footer-part-->
 <script src="<?= base_url() ?>assets/js/bootstrap.min.js"></script>
 <script src="<?= base_url() ?>assets/js/matrix.js"></script>
+<script src="<?= base_url('assets/js/sidebar-fix.js'); ?>"></script>
 </body>
 <script type="text/javascript">
     $(document).ready(function() {

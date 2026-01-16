@@ -144,7 +144,12 @@
                                 $editavel = $this->os_model->isEditable($r->idOs);
 
                                 if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
-                                    echo '<a style="margin-right: 1%" href="' . base_url() . 'index.php/os/visualizar/' . $r->idOs . '" class="btn-nwe" title="Ver mais detalhes"><i class="bx bx-show"></i></a>';
+                                
+                                // IMPRIMIR PRODUÇÃO (NOVO - PRIMEIRO BOTÃO)
+                                echo '<a style="margin-right: 1%" href="' . base_url() . 'index.php/os/visualizar/' . $r->idOs . '" class="btn-nwe" title="Ver mais detalhes"><i class="bx bx-show"></i></a>';
+                                    echo '<a style="margin-right: 1%" href="' . base_url() . 'index.php/os/imprimirProducao/' . $r->idOs . '" target="_blank" class="btn-nwe6" title="Imprimir Produção"><i class="bx bx-file-blank"></i></a>';
+                                    echo '<a style="margin-right: 1%" href="' . base_url() . 'index.php/os/exportarGradeExcel/' . $r->idOs . '" class="btn-nwe5" title="Baixar grade (Excel)"><i class="bx bx-spreadsheet"></i></a>';    
+                                    
                                     echo '<a style="margin-right: 1%" href="' . base_url() . 'index.php/os/imprimir/' . $r->idOs . '" target="_blank" class="btn-nwe6" title="Imprimir A4"><i class="bx bx-printer bx-xs"></i></a>';
                                     echo '<a style="margin-right: 1%" href="' . base_url() . 'index.php/os/imprimirTermica/' . $r->idOs . '" target="_blank" class="btn-nwe6" title="Imprimir Não Fiscal"><i class="bx bx-printer bx-xs"></i></a>';
                                 }

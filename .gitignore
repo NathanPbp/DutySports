@@ -1,19 +1,65 @@
-# Configs sensíveis
+# =========================
+# CodeIgniter / MAPOS
+# =========================
+
+# Ambiente
 .env
-application/config/*.php
-!application/config/config.php
-!application/config/database.php
 
-# Banco
-*.sql
+# Banco / configs sensíveis
+application/config/database.php
+application/config/email.php
 
-# Uploads
-/uploads
-
-# Vendor (se usar composer em produção)
-vendor/
-
-# Cache
-application/cache/*
+# Logs e cache
 application/logs/*
+application/cache/*
 
+# Uploads e arquivos gerados
+assets/uploads/*
+!assets/uploads/.gitkeep
+
+assets/anexos/*
+!assets/anexos/.gitkeep
+
+assets/arquivos/*
+!assets/arquivos/.gitkeep
+
+assets/images/clientes/*
+!assets/images/clientes/.gitkeep
+
+assets/images/usuarios/*
+!assets/images/usuarios/.gitkeep
+
+# PDFs e temporários
+assets/pdf/*
+!assets/pdf/.gitkeep
+
+assets/temp/*
+assets/tmp/*
+
+# Backups
+*.sql
+*.zip
+*.tar
+*.tar.gz
+*.bak
+
+# Sistema / servidor
+error_log
+
+# IDE / SO
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Node / build
+node_modules/
+dist/
+
+# arquivos de teste
+teste_php_real.php
+application/config/teste_database.php
+
+# uploads
+uploads/

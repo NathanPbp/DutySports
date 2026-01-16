@@ -104,12 +104,30 @@
                             <div class="controls">
                                 <input id="nomeCliente" type="text" name="nomeCliente" value="<?php echo $result->nomeCliente; ?>" />
                             </div>
+                            <div class="control-group">
+    <label for="nomeFantasia" class="control-label">Nome Fantasia</label>
+    <div class="controls">
+        <input id="nomeFantasia" type="text" name="nomeFantasia" value="<?php echo $result->nomeFantasia; ?>" />
+    </div>
+</div>
+
                         </div>
                         <div class="control-group">
-                            <label for="contato" class="control-label">Contato:</label>
-                            <div class="controls">
-                                <input class="contato" type="text" name="contato" value="<?php echo $result->contato; ?>" />
-                            </div>
+                            <div class="control-group">
+    <label for="contato" class="control-label">Origem do Cliente</label>
+    <div class="controls">
+        <select name="contato" id="contato">
+            <option value="">Selecione...</option>
+            <option value="Instagram" <?= ($result->contato == 'Instagram') ? 'selected' : '' ?>>Instagram</option>
+            <option value="Google" <?= ($result->contato == 'Google') ? 'selected' : '' ?>>Google</option>
+            <option value="WhatsApp" <?= ($result->contato == 'WhatsApp') ? 'selected' : '' ?>>WhatsApp</option>
+            <option value="Indicação" <?= ($result->contato == 'Indicação') ? 'selected' : '' ?>>Indicação</option>
+            <option value="Loja física" <?= ($result->contato == 'Loja física') ? 'selected' : '' ?>>Loja física</option>
+            <option value="Outro" <?= ($result->contato == 'Outro') ? 'selected' : '' ?>>Outro</option>
+        </select>
+    </div>
+</div>
+
                         </div>
                         <div class="control-group">
                             <label for="telefone" class="control-label">Telefone</label>
@@ -210,52 +228,20 @@
 <script src="<?php echo base_url() ?>assets/js/jquery.validate.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
-        let container = document.querySelector('div');
-        let input = document.querySelector('#senha');
-        let icon = document.querySelector('#imgSenha');
-
-        icon.addEventListener('click', function() {
-            container.classList.toggle('visible');
-            if (container.classList.contains('visible')) {
-                icon.src = '<?php echo base_url() ?>assets/img/eye-off.svg';
-                input.type = 'text';
-            } else {
-                icon.src = '<?php echo base_url() ?>assets/img/eye.svg'
-                input.type = 'password';
-            }
-        });
 
         $.getJSON('<?php echo base_url() ?>assets/json/estados.json', function(data) {
             for (i in data.estados) {
-                $('#estado').append(new Option(data.estados[i].nome, data.estados[i].sigla));
+                $('#estado').append(
+                    new Option(data.estados[i].nome, data.estados[i].sigla)
+                );
             }
+
             var curState = '<?php echo $result->estado; ?>';
             if (curState) {
                 $("#estado option[value=" + curState + "]").prop("selected", true);
             }
-
         });
-        $('#formCliente').validate({
-            rules: {
-                nomeCliente: {
-                    required: true
-                },
-            },
-            messages: {
-                nomeCliente: {
-                    required: 'Campo Requerido.'
-                },
-            },
 
-            errorClass: "help-inline",
-            errorElement: "span",
-            highlight: function(element, errorClass, validClass) {
-                $(element).parents('.control-group').addClass('error');
-            },
-            unhighlight: function(element, errorClass, validClass) {
-                $(element).parents('.control-group').removeClass('error');
-                $(element).parents('.control-group').addClass('success');
-            }
-        });
     });
 </script>
+

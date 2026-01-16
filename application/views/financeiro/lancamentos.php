@@ -38,63 +38,97 @@ $periodo = $this->input->get('periodo');
                 <span class="button__icon"><i class='bx bx-plus-circle'></i></span><span class="button__text2" title="Cadastrar nova receita ou despesa"> Receita/Despesa</span></a>
         </div>
     <?php } ?>
+<div class="span12" style="margin-left: 0; margin-top: 1rem;">
 
-    <div class="span12" style="margin-left: 0;margin-top: 1rem;">
-        <form action="<?php echo current_url(); ?>" method="get">
-            <div class="span2" style="margin-left: 0">
-                <label>Período</label>
-                <select id="periodo" name="periodo" class="span12">
-                    <option value="dia" <?= $this->input->get('periodo') === 'dia' ? 'selected' : '' ?>>Dia</option>
-                    <option value="semana" <?= $this->input->get('periodo') === 'semana' ? 'selected' : '' ?>>Semana</option>
-                    <option value="mesAnterior" <?= $this->input->get('periodo') === 'mesAnterior' ? 'selected' : '' ?>>Mês Anterior</option>
-                    <option value="mes" <?= $this->input->get('periodo') === 'mes' ? 'selected' : '' ?>>Mês</option>
-                    <option value="mesPosterior" <?= $this->input->get('periodo') === 'mesPosterior' ? 'selected' : '' ?>>Mês Posterior</option>
-                    <option value="ano" <?= $this->input->get('periodo') === 'ano' ? 'selected' : '' ?>>Ano</option>
-                    <option value="personalizado" <?= $this->input->get('periodo') === 'personalizado' ? 'selected' : '' ?>>Personalizado</option>
-                </select>
-            </div>
+<form action="<?php echo current_url(); ?>" method="get">
 
-            <div class="span2">
-                <label>Vencimento (de)</label>
-                <input id="vencimento_de" type="text" class="span12 datepicker" name="vencimento_de" value="<?= $this->input->get('vencimento_de') ? $this->input->get('vencimento_de') : date('d/m/Y') ?>">
-            </div>
+    <!-- LINHA 1 -->
+    <div class="span12" style="margin-left:0">
 
-            <div class="span2">
-                <label>Vencimento (até)</label>
-                <input id="vencimento_ate" type="text" class="span12 datepicker" name="vencimento_ate" value="<?= $this->input->get('vencimento_ate') ? $this->input->get('vencimento_ate') : date('d/m/Y') ?>">
-            </div>
+        <div class="span2">
+            <label>Período</label>
+            <select id="periodo" name="periodo" class="span12">
+                <option value="dia" <?= $this->input->get('periodo') === 'dia' ? 'selected' : '' ?>>Dia</option>
+                <option value="semana" <?= $this->input->get('periodo') === 'semana' ? 'selected' : '' ?>>Semana</option>
+                <option value="mesAnterior" <?= $this->input->get('periodo') === 'mesAnterior' ? 'selected' : '' ?>>Mês Anterior</option>
+                <option value="mes" <?= $this->input->get('periodo') === 'mes' ? 'selected' : '' ?>>Mês</option>
+                <option value="mesPosterior" <?= $this->input->get('periodo') === 'mesPosterior' ? 'selected' : '' ?>>Mês Posterior</option>
+                <option value="ano" <?= $this->input->get('periodo') === 'ano' ? 'selected' : '' ?>>Ano</option>
+                <option value="personalizado" <?= $this->input->get('periodo') === 'personalizado' ? 'selected' : '' ?>>Personalizado</option>
+            </select>
+        </div>
 
-            <div class="span2">
-                <label>Tipo</label>
-                <select name="tipo" class="span12">
-                    <option value="">Todos</option>
-                    <option value="receita" <?= $this->input->get('tipo') === 'receita' ? 'selected' : '' ?>>Receita
-                    </option>
-                    <option value="despesa" <?= $this->input->get('tipo') === 'despesa' ? 'selected' : '' ?>>Despesa
-                    </option>
-                </select>
-            </div>
+        <div class="span2">
+            <label>Vencimento (de)</label>
+            <input type="text" class="span12 datepicker" name="vencimento_de"
+                   value="<?= $this->input->get('vencimento_de') ?: date('d/m/Y') ?>">
+        </div>
 
-            <div class="span2">
-                <label>Status</label>
-                <select name="status" class="span12">
-                    <option value="">Todos (Pendente e Pago)</option>
-                    <option value="0" <?= $this->input->get('status') === '0' ? 'selected' : '' ?>>Pendente</option>
-                    <option value="1" <?= $this->input->get('status') === '1' ? 'selected' : '' ?>>Pago</option>
-                </select>
-            </div>
+        <div class="span2">
+            <label>Vencimento (até)</label>
+            <input type="text" class="span12 datepicker" name="vencimento_ate"
+                   value="<?= $this->input->get('vencimento_ate') ?: date('d/m/Y') ?>">
+        </div>
 
-            <div class="span2">
-                <label>Cliente/Fornecedor</label>
-                <input id="cliente_busca" type="text" class="span12" name="cliente" value="<?= $this->input->get('cliente') ?>">
-            </div>
+        <div class="span2">
+            <label>Tipo</label>
+            <select name="tipo" class="span12">
+                <option value="">Todos</option>
+                <option value="receita" <?= $this->input->get('tipo') === 'receita' ? 'selected' : '' ?>>Receita</option>
+                <option value="despesa" <?= $this->input->get('tipo') === 'despesa' ? 'selected' : '' ?>>Despesa</option>
+            </select>
+        </div>
 
-            <div class="span2 pull-right">
-                <button type="submit" class="button btn btn-primary btn-sm" style="min-width: 120px">
-                    <span class="button__icon"><i class='bx bx-filter-alt'></i></span><span class="button__text2">Filtrar</span></a></button>
-            </div>
-        </form>
+        <div class="span2">
+            <label>Status</label>
+            <select name="status" class="span12">
+                <option value="">Todos (Pendente e Pago)</option>
+                <option value="0" <?= $this->input->get('status') === '0' ? 'selected' : '' ?>>Pendente</option>
+                <option value="1" <?= $this->input->get('status') === '1' ? 'selected' : '' ?>>Pago</option>
+            </select>
+        </div>
+
+        <div class="span2">
+            <label>Origem</label>
+            <select name="origem" class="span12">
+                <option value="">Todas</option>
+                <option value="sorocaba" <?= $this->input->get('origem') === 'sorocaba' ? 'selected' : '' ?>>Sorocaba</option>
+                <option value="varzea_paulista" <?= $this->input->get('origem') === 'varzea_paulista' ? 'selected' : '' ?>>Várzea Paulista</option>
+                <option value="litoral" <?= $this->input->get('origem') === 'litoral' ? 'selected' : '' ?>>Litoral</option>
+            </select>
+        </div>
+
     </div>
+
+    <!-- LINHA 2 -->
+    <div class="span12" style="margin-left:0; margin-top:10px">
+
+        <div class="span3">
+            <label>Vendedor</label>
+            <input type="text" name="vendedor" class="span12"
+                   placeholder="Nome do vendedor"
+                   value="<?= $this->input->get('vendedor') ?>">
+        </div>
+
+        <div class="span4">
+            <label>Cliente/Fornecedor</label>
+            <input type="text" name="cliente" class="span12"
+                   value="<?= $this->input->get('cliente') ?>">
+        </div>
+
+        <div class="span2" style="margin-top:25px">
+            <button type="submit" class="button btn btn-primary btn-sm span12">
+                <i class='bx bx-filter-alt'></i> Filtrar
+            </button>
+        </div>
+
+    </div>
+
+</form>
+
+</div>
+
+
 
     <div>
         <div class="widget-box">
@@ -109,6 +143,8 @@ $periodo = $this->input->get('periodo');
                             <th>Tipo</th>
                             <th>Cliente / Fornecedor</th>
                             <th>Descrição</th>
+                             <th>Origem</th>
+                            <th>Vendedor</th>
                             <th>Vencimento</th>
                             <th>Status</th>
                             <th>Observações</th>
@@ -145,6 +181,8 @@ $periodo = $this->input->get('periodo');
                             echo '<td><span class="label label-' . $label . '">' . ucfirst($r->tipo) . '</span></td>';
                             echo '<td>' . $r->cliente_fornecedor . '</td>';
                             echo '<td>' . $r->descricao . '</td>';
+                            echo '<td>' . (!empty($r->origem) ? ucfirst(str_replace('_', ' ', $r->origem)) : '-') . '</td>';
+                            echo '<td>' . (!empty($r->vendedor) ? $r->vendedor : '-') . '</td>';
                             echo '<td>' . $vencimento . '</td>';
                             echo '<td>' . $status . '</td>';
                             echo '<td>' . $r->observacoes . '</td>';
@@ -273,6 +311,35 @@ echo number_format($soma_descontos_pagos, 2, ',', '.')?></strong></td>
                 <input class="span12" id="descricao" type="text" name="descricao" required />
                 <input id="urlAtual" type="hidden" name="urlAtual" value="<?php echo current_url() ?>" />
             </div>
+            <!-- ORIGEM VENDAS-->
+           <div class="span12" style="margin-left:0">
+
+    <div class="span6">
+        <label>Origem da Venda</label>
+        <label class="radio">
+            <input type="radio" name="origem" value="sorocaba"> Sorocaba
+        </label>
+        <label class="radio">
+            <input type="radio" name="origem" value="varzea_paulista"> Várzea Paulista
+        </label>
+        <label class="radio">
+            <input type="radio" name="origem" value="litoral"> Litoral
+        </label>
+    </div>
+
+    <div class="span6">
+        <label>Vendedor</label>
+        <input type="text"
+               name="vendedor"
+               class="span12"
+               placeholder="Nome do vendedor">
+    </div>
+
+</div>
+
+<!-- VENDEDOR -->
+
+
             <div class="span12" style="margin-left: 0">
                 <div class="span12" style="margin-left: 0">
                     <label for="cliente">Cliente/Fornecedor*</label>
@@ -582,6 +649,33 @@ echo number_format($soma_descontos_pagos, 2, ',', '.')?></strong></td>
                 <input class="span12" id="descricaoEditar" type="text" name="descricao" required />
                 <input id="urlAtualEditar" type="hidden" name="urlAtual" value="" />
             </div>
+        <!-- Origem da Venda -->
+<div class="span12" style="margin-left: 0; margin-top: 10px;">
+    <label style="margin-bottom: 6px;">Origem da Venda</label>
+
+    <label class="radio inline" style="margin-right: 15px;">
+        <input type="radio" name="origem" id="origemSorocabaEditar" value="sorocaba">
+        Sorocaba
+    </label>
+
+    <label class="radio inline" style="margin-right: 15px;">
+        <input type="radio" name="origem" id="origemVarzeaEditar" value="varzea_paulista">
+        Várzea Paulista
+    </label>
+
+    <label class="radio inline">
+        <input type="radio" name="origem" id="origemLitoralEditar" value="litoral">
+        Litoral
+    </label>
+</div>
+
+<!-- Vendedor -->
+<div class="span12" style="margin-left: 0; margin-top: 10px;">
+    <label for="vendedorEditar">Vendedor</label>
+    <input class="span12" id="vendedorEditar" type="text" name="vendedor" />
+</div>
+
+
             <div class="span12" style="margin-left: 0">
                 <div class="span12" style="margin-left: 0">
                     <label for="fornecedor">Cliente/Fornecedor*</label>

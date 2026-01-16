@@ -59,15 +59,51 @@
                     <td colspan="9">Nenhum Cliente Cadastrado</td>
                   </tr>';
                     }
-                    foreach ($results as $r) {
-                        echo '<tr>';
-                        echo '<td>' . $r->idClientes . '</td>';
-                        echo '<td><a href="' . base_url() . 'index.php/clientes/visualizar/' . $r->idClientes . '" style="margin-right: 1%">' . $r->nomeCliente . '</a></td>';
-                        echo '<td>' . $r->contato . '</td>';
-                        echo '<td>' . $r->documento . '</td>';
-                        echo '<td>' . $r->telefone . '</td>';
-                        echo '<td>' . $r->celular . '</td>';
-                        echo '<td>' . $r->email . '</td>';
+foreach ($results as $r) {
+    echo '<tr>';
+
+    echo '<td>' . $r->idClientes . '</td>';
+//inicio 
+  echo '<td class="cliente-col">';
+echo '<a class="nome-cliente" href="' . base_url('index.php/clientes/visualizar/' . $r->idClientes) . '">'
+    . $r->nomeCliente .
+'</a>';
+
+if (!empty($r->nomeFantasia)) {
+    echo '<span class="nome-fantasia">' . $r->nomeFantasia . '</span>';
+}
+echo '</td>';
+
+echo '<td>';
+
+if (!empty($r->contato)) {
+    $origem = strtolower(trim($r->contato));
+    $classe = 'badge-origem badge-outro';
+
+    if (strpos($origem, 'insta') !== false) {
+        $classe = 'badge-origem badge-instagram';
+    } elseif (strpos($origem, 'google') !== false) {
+        $classe = 'badge-origem badge-google';
+    } elseif (strpos($origem, 'whats') !== false) {
+        $classe = 'badge-origem badge-whatsapp';
+    } elseif (strpos($origem, 'loja') !== false) {
+        $classe = 'badge-origem badge-loja';
+    } elseif (strpos($origem, 'boca') !== false || strpos($origem, 'indic') !== false) {
+        $classe = 'badge-origem badge-indicacao';
+    }
+
+    echo '<span class="' . $classe . '">' . $r->contato . '</span>';
+} else {
+    echo '<span class="badge-origem badge-outro">Outro</span>';
+}
+
+echo '</td>';
+
+//fim
+    echo '<td>' . $r->documento . '</td>';
+    echo '<td>' . $r->telefone . '</td>';
+    echo '<td>' . $r->celular . '</td>';
+    echo '<td>' . $r->email . '</td>';
 
                         // Verifica se é Fornecedor ou Cliente
                         if ($r->fornecedor == 1) {

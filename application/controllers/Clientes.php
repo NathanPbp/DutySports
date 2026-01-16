@@ -47,61 +47,63 @@ class Clientes extends MY_Controller
     }
 
     public function adicionar()
-    {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'aCliente')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para adicionar clientes.');
-            redirect(base_url());
-        }
-
-        $this->load->library('form_validation');
-        $this->data['custom_error'] = '';
-
-        $senhaCliente = $this->input->post('senha') ? $this->input->post('senha') : preg_replace('/[^\p{L}\p{N}\s]/', '', set_value('documento'));
-
-        $cpf_cnpj = preg_replace('/[^\p{L}\p{N}\s]/', '', set_value('documento'));
-
-        if (strlen($cpf_cnpj) == 11) {
-            $pessoa_fisica = true;
-        } else {
-            $pessoa_fisica = false;
-        }
-
-        if ($this->form_validation->run('clientes') == false) {
-            $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
-        } else {
-            $data = [
-                'nomeCliente' => set_value('nomeCliente'),
-                'contato' => set_value('contato'),
-                'pessoa_fisica' => $pessoa_fisica,
-                'documento' => set_value('documento'),
-                'telefone' => set_value('telefone'),
-                'celular' => set_value('celular'),
-                'email' => set_value('email'),
-                'senha' => password_hash($senhaCliente, PASSWORD_DEFAULT),
-                'rua' => set_value('rua'),
-                'numero' => set_value('numero'),
-                'complemento' => set_value('complemento'),
-                'bairro' => set_value('bairro'),
-                'cidade' => set_value('cidade'),
-                'estado' => set_value('estado'),
-                'cep' => set_value('cep'),
-                'dataCadastro' => date('Y-m-d'),
-                'fornecedor' => (set_value('fornecedor') == true ? 1 : 0),
-            ];
-
-            if ($this->clientes_model->add('clientes', $data) == true) {
-                $this->session->set_flashdata('success', 'Cliente adicionado com sucesso!');
-                log_info('Adicionou um cliente.');
-                redirect(site_url('clientes/'));
-            } else {
-                $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro.</p></div>';
-            }
-        }
-
-        $this->data['view'] = 'clientes/adicionarCliente';
-
-        return $this->layout();
+{
+    if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'aCliente')) {
+        $this->session->set_flashdata('error', 'Você não tem permissão para adicionar clientes.');
+        redirect(base_url());
     }
+
+    $this->load->library('form_validation');
+
+    // 🔹 Validação REAL
+    $this->form_validation->set_rules('documento', 'CPF/CNPJ', 'required|trim');
+    $this->form_validation->set_rules('nomeCliente', 'Nome', 'required|trim');
+    $this->form_validation->set_rules('telefone', 'Telefone', 'required|trim');
+
+    if ($this->form_validation->run() == false) {
+        $this->data['custom_error'] = validation_errors('<p>', '</p>');
+    } else {
+
+        $cpf_cnpj = preg_replace('/\D/', '', $this->input->post('documento'));
+        $pessoa_fisica = (strlen($cpf_cnpj) == 11);
+
+        $senhaCliente = $this->input->post('senha')
+            ? $this->input->post('senha')
+            : $cpf_cnpj;
+
+        $data = [
+            'nomeCliente'   => $this->input->post('nomeCliente'),
+            'contato'       => $this->input->post('contato'),
+            'pessoa_fisica' => $pessoa_fisica,
+            'nomeFantasia' => $this->input->post('nomeFantasia'),
+            'documento'     => $this->input->post('documento'),
+            'telefone'      => $this->input->post('telefone'),
+            'celular'       => $this->input->post('celular'),
+            'email'         => $this->input->post('email'),
+            'senha'         => password_hash($senhaCliente, PASSWORD_DEFAULT),
+            'rua'           => $this->input->post('rua'),
+            'numero'        => $this->input->post('numero'),
+            'complemento'   => $this->input->post('complemento'),
+            'bairro'        => $this->input->post('bairro'),
+            'cidade'        => $this->input->post('cidade'),
+            'estado'        => $this->input->post('estado'),
+            'cep'           => $this->input->post('cep'),
+            'dataCadastro'  => date('Y-m-d'),
+            'fornecedor'    => $this->input->post('fornecedor') ? 1 : 0,
+        ];
+
+        if ($this->clientes_model->add('clientes', $data)) {
+            $this->session->set_flashdata('success', 'Cliente adicionado com sucesso!');
+            redirect(site_url('clientes'));
+        } else {
+            $this->data['custom_error'] = 'Erro ao salvar cliente.';
+        }
+    }
+
+    $this->data['view'] = 'clientes/adicionarCliente';
+    return $this->layout();
+}
+
 
     public function editar()
     {
@@ -117,8 +119,13 @@ class Clientes extends MY_Controller
 
         $this->load->library('form_validation');
         $this->data['custom_error'] = '';
+        // Valida apenas o que pode mudar no editar
+$this->form_validation->set_rules('nomeCliente', 'Nome', 'required|trim');
+$this->form_validation->set_rules('telefone', 'Telefone', 'trim');
 
-        if ($this->form_validation->run('clientes') == false) {
+
+      if ($this->form_validation->run() == false) {
+
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
             $senha = $this->input->post('senha');
@@ -127,6 +134,7 @@ class Clientes extends MY_Controller
 
                 $data = [
                     'nomeCliente' => $this->input->post('nomeCliente'),
+                    'nomeFantasia' => $this->input->post('nomeFantasia'),
                     'contato' => $this->input->post('contato'),
                     'documento' => $this->input->post('documento'),
                     'telefone' => $this->input->post('telefone'),
@@ -145,6 +153,7 @@ class Clientes extends MY_Controller
             } else {
                 $data = [
                     'nomeCliente' => $this->input->post('nomeCliente'),
+                    'nomeFantasia' => $this->input->post('nomeFantasia'),
                     'contato' => $this->input->post('contato'),
                     'documento' => $this->input->post('documento'),
                     'telefone' => $this->input->post('telefone'),
@@ -164,7 +173,9 @@ class Clientes extends MY_Controller
             if ($this->clientes_model->edit('clientes', $data, 'idClientes', $this->input->post('idClientes')) == true) {
                 $this->session->set_flashdata('success', 'Cliente editado com sucesso!');
                 log_info('Alterou um cliente. ID' . $this->input->post('idClientes'));
-                redirect(site_url('clientes/editar/') . $this->input->post('idClientes'));
+            redirect(site_url('clientes/editar/' . (int) $this->input->post('idClientes')));
+exit;
+
             } else {
                 $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro</p></div>';
             }

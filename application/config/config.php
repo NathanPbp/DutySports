@@ -44,7 +44,7 @@ date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'America/Sao_Paulo');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://localhost/mapos/';
+$config['base_url'] = 'https://sistema.dutysports.store/';
 
 /*
 |--------------------------------------------------------------------------
@@ -121,7 +121,7 @@ $config['charset'] = $_ENV['APP_CHARSET'] ?? 'UTF-8';
 | setting this variable to TRUE (boolean).  See the user guide for details.
 |
 */
-$config['enable_hooks'] = true;
+$config['enable_hooks'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------

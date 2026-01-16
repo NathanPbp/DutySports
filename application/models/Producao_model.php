@@ -165,19 +165,25 @@
         * =============================== */
 
         public function updateArte($producaoId, $novoPath)
-        {
-            $atual = $this->getProducaoById($producaoId);
+{
+    $atual = $this->getProducaoById($producaoId);
 
-            if ($atual && !empty($atual->arte_imagem)) {
-                $oldPath = FCPATH . $atual->arte_imagem;
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
-            }
-
-            $this->db->where('id', $producaoId);
-            $this->db->update('os_producao', [
-                'arte_imagem' => $novoPath
-            ]);
+    // só apaga a antiga SE for diferente da nova
+    if (
+        $atual &&
+        !empty($atual->arte_imagem) &&
+        $atual->arte_imagem !== $novoPath
+    ) {
+        $oldPath = FCPATH . $atual->arte_imagem;
+        if (is_file($oldPath)) {
+            unlink($oldPath);
         }
+    }
+
+    $this->db->where('id', $producaoId);
+    $this->db->update('os_producao', [
+        'arte_imagem' => $novoPath
+    ]);
+}
+
     }

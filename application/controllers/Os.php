@@ -597,44 +597,27 @@ public function imprimirProducao($idOs = null)
             true
         );
 
+
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Ln(2);
+$yAbaixoData = $pdf->GetY();
 
         /* ======================================================
          * ARTE (ESQUERDA)
          * ====================================================== */
         $xArte = 10;
-        $yArte = $pdf->GetY();
+       $yArte = $yAbaixoData;
         $wArte = 110;
         $hArte = 85;
-
-        $pdf->SetFillColor(255, 204, 0);
+       //ARTE
+       /* $pdf->SetFillColor(255, 204, 0);
         $pdf->SetFont('helvetica', 'B', 9);
         $pdf->SetXY($xArte, $yArte);
-        $pdf->Cell($wArte, 6, 'ARTE', 1, 1, 'C', true);
+        $pdf->Cell($wArte, 6, 'ARTE', 1, 1, 'C', true);*/
 
-        $pdf->Rect($xArte, $yArte + 6, $wArte, $hArte);
+        $labelW = 20;
+        $valorW = 20;
+        $lineH  = 6;
 
-        $artePath = FCPATH . ltrim($producao->arte_imagem ?? '', '/');
-
-        if (!empty($producao->arte_imagem) && is_file($artePath)) {
-            [$wImg, $hImg] = getimagesize($artePath);
-            $scale = min(($wArte - 10) / $wImg, ($hArte - 10) / $hImg);
-            $nw = $wImg * $scale;
-            $nh = $hImg * $scale;
-
-            $pdf->Image(
-                $artePath,
-                $xArte + (($wArte - $nw) / 2),
-                $yArte + 10,
-                $nw,
-                $nh
-            );
-        } else {
-            $pdf->SetXY($xArte, $yArte + 45);
-            $pdf->SetFont('helvetica', 'I', 9);
-            $pdf->Cell($wArte, 6, 'INSERIR ARTE', 0, 0, 'C');
-        }
 
         /* ======================================================
          * DADOS + INFORMAÇÕES (DIREITA)
@@ -677,37 +660,67 @@ public function imprimirProducao($idOs = null)
         $pdf->SetFont('helvetica', '', 8);
         $pdf->Cell(55, $hLinha, $usuario->nome ?? '-', 1, 1);
 
-        $pdf->SetFillColor(255, 204, 0);
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->SetX($xDir);
-        $pdf->Cell($wDir, 6, 'INFORMAÇÕES', 1, 1, 'C', true);
+$pdf->SetFillColor(255, 204, 0);
+$pdf->SetFont('helvetica', 'B', 9);
+$pdf->SetX($xDir);
+$pdf->Cell($wDir, 6, 'INFORMAÇÕES', 1, 1, 'C', true);
 
-        $pdf->SetFont('helvetica', '', 8);
+// larguras
+$labelW = 22;
+$valueW = $wDir - $labelW;
+$lineH  = 6;
 
-        $labelW = 20;
-        $valorW = 20;
+// normaliza texto (tira múltiplos espaços / quebra / tabs)
+$norm = function($t) {
+    $t = (string) $t;
+    $t = trim($t);
+    $t = preg_replace('/\s+/u', ' ', $t); // vira "DRY FIT LISO"
+    return $t === '' ? '-' : $t;
+};
 
-        $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->SetX($xDir);
-        $pdf->Cell($labelW, $hLinha, 'TECIDO:', 1, 0);
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($valorW, $hLinha, strtoupper($producao->tecido ?? '-'), 1, 0);
+// desenha uma linha separadora sem cortar o texto
+$drawSep = function() use ($pdf, $xDir, $wDir) {
+    $y = $pdf->GetY();
+    $pdf->Line($xDir, $y, $xDir + $wDir, $y); // linha fina no Y atual
+    $pdf->Ln(1.2); // desce um pouquinho pra não escrever em cima da linha
+};
 
-        $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->Cell($labelW, $hLinha, 'GOLA:', 1, 0);
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($valorW, $hLinha, strtoupper($producao->gola ?? '-'), 1, 1);
+// helper: imprime "LABEL: valor" e volta X certinho
+$printRow = function($label, $value) use ($pdf, $xDir, $labelW, $valueW, $lineH, $norm) {
+    $pdf->SetX($xDir);
 
-        $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->SetX($xDir);
-        $pdf->Cell($labelW, $hLinha, 'TÉCNICA:', 1, 0);
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($valorW, $hLinha, strtoupper($producao->tecnica ?? '-'), 1, 0);
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->Cell($labelW, $lineH, $label, 0, 0);
 
-        $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->Cell($labelW, $hLinha, 'SÍMBOLO:', 1, 0);
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($valorW, $hLinha, strtoupper($producao->simbolo ?? '-'), 1, 1);
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->MultiCell(
+        $valueW,
+        $lineH,
+        strtoupper($norm($value)),
+        0,
+        'L',      // <<< IMPORTANTÍSSIMO (sem justificar)
+        false,
+        1
+    );
+};
+
+// guarda início pra encaixar dentro de uma caixa depois
+$yInfoStart = $pdf->GetY();
+
+// linhas
+$printRow('TECIDO:',  $producao->tecido ?? '-');  $drawSep();
+$printRow('GOLA:',    $producao->gola ?? '-');    $drawSep();
+$printRow('TÉCNICA:', $producao->tecnica ?? '-'); $drawSep();
+$printRow('SÍMBOLO:', $producao->simbolo ?? '-'); // último: sem separador
+
+// desenha a caixa externa só depois de calcular a altura real
+$yInfoEnd = $pdf->GetY();
+$pdf->Rect($xDir, $yInfoStart, $wDir, ($yInfoEnd - $yInfoStart));
+
+
+
+
+
 /* ===============================
  * OBSERVAÇÕES (SEM LINHAS INTERNAS)
  * =============================== */
@@ -721,7 +734,7 @@ $pdf->Cell($wDir, 6, 'OBSERVAÇÕES', 1, 1, 'C', true);
 /* posição inicial do texto */
 $xObs = $xDir;
 $yObs = $pdf->GetY();
-$hObs = 40; // altura fixa do campo (ajuste se quiser)
+$hObs = 22; // altura fixa do campo (ajuste se quiser)
 
 /* desenha a caixa externa */
 $pdf->Rect($xObs, $yObs, $wDir, $hObs);
@@ -738,6 +751,44 @@ $pdf->MultiCell(
 
 /* reposiciona o cursor abaixo */
 $pdf->SetY($yObs + $hObs);
+// pega onde a coluna direita terminou
+$yFimDireita = $pdf->GetY();
+
+// calcula altura final da arte
+$hArteFinal  = $yFimDireita - $yArte;
+
+// desenha a caixa da ARTE alinhada com OBSERVAÇÕES
+$pdf->Rect($xArte, $yArte, $wArte, $hArteFinal);
+
+//ARTE
+$artePath = FCPATH . ltrim($producao->arte_imagem ?? '', '');
+
+if (!empty($producao->arte_imagem) && is_file($artePath)) {
+
+    [$imgW, $imgH] = getimagesize($artePath);
+
+    $padding = 4;
+
+    $boxW = $wArte - ($padding * 2);
+    $boxH = $hArteFinal - ($padding * 2);
+
+    $scale = min($boxW / $imgW, $boxH / $imgH);
+
+    $newW = $imgW * $scale;
+    $newH = $imgH * $scale;
+
+    $xImg = $xArte + ($wArte - $newW) / 2;
+    $yImg = $yArte + ($hArteFinal - $newH) / 2;
+
+    $pdf->Image($artePath, $xImg, $yImg, $newW, $newH);
+
+} else {
+
+    $pdf->SetXY($xArte, $yArte + ($hArteFinal / 2) - 3);
+    $pdf->SetFont('helvetica', 'I', 9);
+    $pdf->Cell($wArte, 6, 'INSERIR ARTE', 0, 0, 'C');
+}
+
 
 
 // garante que nada da grade sobreponha ARTE ou OBSERVAÇÕES
@@ -767,8 +818,8 @@ $pdf->SetTextColor(0, 0, 0);
 
         $pdf->Cell(12, 7, 'Qtd', 1);
         $pdf->Cell(38, 7, 'Nome', 1);
-        $pdf->Cell(18, 7, 'Sup', 1);
-        $pdf->Cell(18, 7, 'Inf', 1);
+        $pdf->Cell(18, 7, 'Superior', 1);
+        $pdf->Cell(18, 7, 'Inferior', 1);
         $pdf->Cell(12, 7, 'Nº', 1);
         $pdf->Cell(42, 7, 'Adicional', 1);
         $pdf->Cell(50, 7, 'Modelo', 1);
@@ -821,13 +872,18 @@ public function exportarGradeExcel($producaoId)
         show_error('Nenhuma grade encontrada.');
     }
 
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=grade_producao_' . $producaoId . '.csv');
+    // Autoload do Composer
+    require_once FCPATH . 'vendor/autoload.php';
 
-    $output = fopen('php://output', 'w');
+    // Cria planilha
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setTitle('Grade de Produção');
 
-    // Cabeçalho
-    fputcsv($output, [
+    // ===============================
+    // CABEÇALHO
+    // ===============================
+    $headers = [
         'Quantidade',
         'Nome',
         'Superior',
@@ -835,23 +891,57 @@ public function exportarGradeExcel($producaoId)
         'Número',
         'Adicional',
         'Modelo'
-    ], ';');
+    ];
 
-    foreach ($grade as $linha) {
-        fputcsv($output, [
-            $linha['quantidade'],
-            $linha['nome'],
-            $linha['superior'],
-            $linha['inferior'],
-            $linha['numero'],
-            $linha['adicional'],
-            $linha['modelo']
-        ], ';');
+    $col = 'A';
+    foreach ($headers as $header) {
+        $sheet->setCellValue($col . '1', $header);
+        $sheet->getStyle($col . '1')->getFont()->setBold(true);
+        $col++;
     }
 
-    fclose($output);
+    // ===============================
+    // DADOS
+    // ===============================
+    $row = 2;
+    foreach ($grade as $linha) {
+        $sheet->setCellValue('A' . $row, $linha['quantidade']);
+        $sheet->setCellValue('B' . $row, $linha['nome']);
+        $sheet->setCellValue('C' . $row, $linha['superior']);
+        $sheet->setCellValue('D' . $row, $linha['inferior']);
+        $sheet->setCellValue('E' . $row, $linha['numero']);
+        $sheet->setCellValue('F' . $row, $linha['adicional']);
+        $sheet->setCellValue('G' . $row, $linha['modelo']);
+        $row++;
+    }
+
+    // Auto size
+    foreach (range('A', 'G') as $columnID) {
+        $sheet->getColumnDimension($columnID)->setAutoSize(true);
+    }
+
+    // ===============================
+    // DOWNLOAD XLSX
+    // ===============================
+    $filename = 'grade_producao_' . $producaoId . '.xlsx';
+
+    if (ob_get_length()) {
+        ob_end_clean();
+    }
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    header('Cache-Control: max-age=1');
+    header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+    header('Pragma: public');
+
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer->save('php://output');
     exit;
 }
+
 
 /*===================================FIM EXCEL =================================== */
 
@@ -886,72 +976,80 @@ public function exportarGradeExcel($producaoId)
         $this->load->view('os/imprimirOsTermica', $this->data);
     }
 
-  public function salvarProducao()
-    {
-       
-        if (!$this->permission->checkPermission(
-            $this->session->userdata('permissao'),
-            'eOs'
-        )) {
-            show_error('Sem permissão.');
-        }
-
-        $osId        = (int) $this->input->post('os_id');
-        $producaoId  = (int) $this->input->post('producao_id');
-
-        if (!$osId) {
-            show_error('OS inválida.');
-        }
-
-        $dados = [
-            'modelo'     => $this->input->post('modelo'),
-            'tecido'     => $this->input->post('tecido'),
-            'gola'       => $this->input->post('gola'),
-            'tecnica'    => $this->input->post('tecnica'),
-            'simbolo'    => $this->input->post('simbolo'),
-            'observacao' => $this->input->post('observacao'),
-            'prioridade' => $this->input->post('prioridade'),
-
-        ];
-
-        $grade    = $this->input->post('grade') ?? [];
-        $tecnicas = $this->input->post('tecnicas') ?? [];
-
-        $this->db->trans_start();
-
-        $producaoId = $this->Producao_model->saveProducao(
-            $osId,
-            $dados,
-            $producaoId ?: null
-        );
-
-       $this->Producao_model->saveGrade($producaoId, $osId, $grade);
-
-        $this->Producao_model->saveTecnicas($producaoId, $tecnicas);
-
-
-
-        // UPLOAD ARTE
-        if (!empty($_FILES['arte_imagem']['name'])) {
-            $config['upload_path']   = FCPATH . 'assets/uploads/os_producao/';
-            $config['allowed_types'] = 'jpg|jpeg|png|webp';
-            $config['file_name']     = 'arte_producao_' . $producaoId;
-            $config['overwrite']     = true;
-
-            $this->load->library('upload', $config);
-
-            if ($this->upload->do_upload('arte_imagem')) {
-                $file = $this->upload->data();
-                $path = 'assets/uploads/os_producao/' . $file['file_name'];
-                $this->Producao_model->updateArte($producaoId, $path);
-            }
-        }
-
-        $this->db->trans_complete();
-
-        $this->session->set_flashdata('success', 'Produção salva com sucesso.');
-        redirect('os/visualizar/' . $osId . '?tab=producao&producao=' . $producaoId);
+ public function salvarProducao()
+{
+    if (!$this->permission->checkPermission(
+        $this->session->userdata('permissao'),
+        'eOs'
+    )) {
+        show_error('Sem permissão.');
     }
+
+    $osId       = (int) $this->input->post('os_id');
+    $producaoId = (int) $this->input->post('producao_id');
+
+    if (!$osId) {
+        show_error('OS inválida.');
+    }
+
+    $dados = [
+        'modelo'     => $this->input->post('modelo'),
+        'tecido'     => $this->input->post('tecido'),
+        'gola'       => $this->input->post('gola'),
+        'tecnica'    => $this->input->post('tecnica'),
+        'simbolo'    => $this->input->post('simbolo'),
+        'observacao' => $this->input->post('observacao'),
+        'prioridade' => $this->input->post('prioridade'),
+    ];
+
+    $grade    = $this->input->post('grade') ?? [];
+    $tecnicas = $this->input->post('tecnicas') ?? [];
+
+    $this->db->trans_start();
+
+    $producaoId = $this->Producao_model->saveProducao(
+        $osId,
+        $dados,
+        $producaoId ?: null
+    );
+
+    $this->Producao_model->saveGrade($producaoId, $osId, $grade);
+    $this->Producao_model->saveTecnicas($producaoId, $tecnicas);
+
+    // ===============================
+    // UPLOAD DA ARTE (VERSÃO SEGURA)
+    // ===============================
+    if (!empty($_FILES['arte_imagem']['name'])) {
+
+        $config['upload_path']   = FCPATH . 'assets/uploads/os_producao/';
+        $config['allowed_types'] = 'jpg|jpeg|png|webp';
+        $config['encrypt_name']  = true;
+        $config['overwrite']     = false;
+
+        $this->load->library('upload');
+        $this->upload->initialize($config);
+
+        if ($this->upload->do_upload('arte_imagem')) {
+
+            $file = $this->upload->data();
+            $novoPath = 'assets/uploads/os_producao/' . $file['file_name'];
+
+            $this->Producao_model->updateArte($producaoId, $novoPath);
+
+        } else {
+            log_message(
+                'error',
+                'Erro upload arte: ' . $this->upload->display_errors()
+            );
+        }
+    }
+
+    $this->db->trans_complete();
+
+    $this->session->set_flashdata('success', 'Produção salva com sucesso.');
+    redirect('os/visualizar/' . $osId . '?tab=producao&producao=' . $producaoId);
+}
+
 
 
     public function enviar_email()
@@ -1675,5 +1773,24 @@ public function exportarGradeExcel($producaoId)
     // Restaura fonte original
     $pdf->SetFontSize($originalFontSize);
 }
+
+private function mcCell($pdf, $w, $h, $txt)
+{
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+
+    $pdf->MultiCell($w, $h, $txt, 0);
+
+    $newY = $pdf->GetY();
+    $pdf->SetXY($x + $w, $y);
+
+    return $newY - $y;
+}
+private function normalizaTexto($txt)
+{
+    return trim(preg_replace('/\s+/', ' ', $txt));
+}
+
+
 
 }

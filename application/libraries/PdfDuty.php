@@ -45,76 +45,110 @@ public function setPrioridade($prioridade)
 
 
 public function Header()
-{// ===============================
-// PRIORIDADE (TAG NO CABEÇALHO)
-// ===============================
-if (!empty($this->prioridade)) {
+{
+    /* ===============================
+     * LOGO
+     * =============================== */
+    if (!empty($this->logo) && file_exists($this->logo)) {
+        $this->Image($this->logo, 10, 4, 30);
+    }
 
-    // posição: abaixo de RESPONSÁVEL / EMISSÃO
+    /* ===============================
+     * VARIÁVEIS BASE DO HEADER
+     * =============================== */
+    $x = 135;
+    $y = 4;      // Y FIXO → não muda nunca
+    $w = 60;
+    $h = 6;
+
+    /* ===============================
+     * LINHA 1 — PÁGINA
+     * =============================== */
+    $this->SetXY($x, $y);
     $this->SetFont('helvetica', 'B', 9);
-    $this->SetFillColor(220, 53, 69); // vermelho
-    $this->SetTextColor(0, 0, 0);     // preto
+    $this->SetFillColor(0, 102, 204);
+    $this->SetTextColor(255, 255, 255);
 
-    // X alinhado à direita | Y logo abaixo do bloco direito
-    $this->SetXY(140, 18);
-
-    $this->Cell(
-        50,
-        6,
-        '[ ' . strtoupper($this->prioridade) . ' ]',
+    $this->Cell(    
+        $w,
+        $h,
+        'PÁGINA ' . $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages(),
         1,
-        0,
+        1,
         'C',
         true
     );
 
-    // reset de cores
+    /* ===============================
+     * LINHA 2 — RESPONSÁVEL
+     * =============================== */
+    $this->SetX($x);
+    $this->SetFont('helvetica', 'B', 8);
     $this->SetTextColor(0, 0, 0);
-}
+    $this->SetFillColor(255, 255, 255);
 
+    $this->SetFont('helvetica', 'B', 7);
+$this->Cell(22, $h, 'RESPONSÁVEL:', 1, 0, 'L');
 
-    // ===============================
-    // LOGO (mais para cima)
-    // ===============================
-    if (!empty($this->logo) && file_exists($this->logo)) {
-        // X = 10 | Y = 5 (ANTES estava 8)
-        $this->Image(
-            $this->logo,
-            10,
-            3,
-            30,   // largura um pouco maior
-            0,
-            'JPG',
-            '',
-            '',
-            false,
-            300
-        );
+$this->cellFitText(38, $h, $this->responsavel, 1, 'L');
+$this->Ln();
+
+    /* ===============================
+     * LINHA 3 — EMISSÃO
+     * =============================== */
+    $this->SetX($x);
+    $this->SetFont('helvetica', 'B', 8);
+    $this->Cell(22, $h, 'EMISSÃO:', 1, 0);
+    $this->SetFont('helvetica', '', 8);
+    $this->Cell($w - 22, $h, $this->emissao, 1, 1);
+    
+    /* ===============================
+     * LINHA 4 — PRIORIDADE (SEMPRE RESERVADA)
+     * =============================== */
+    $this->SetX($x);
+    $this->SetFont('helvetica', 'B', 9);
+
+    // cores por tipo
+    switch (strtoupper($this->prioridade)) {
+        case 'URGENTE':
+        case 'EVENTO':
+            $this->SetFillColor(220, 53, 69); // vermelho
+            break;
+
+        case 'RETRABALHO':
+            $this->SetFillColor(25, 135, 84); // verde escuro
+            break;
+
+        default:
+            $this->SetFillColor(240, 240, 240); // neutro
     }
 
-    // ===============================
-    // TÍTULO CENTRAL
-    // ===============================
+    $this->SetTextColor(255, 255, 255);
+
+    $this->Cell(
+        $w,
+        $h,
+        $this->prioridade ? strtoupper($this->prioridade) : '',
+        1,
+        1,
+        'C',
+        true
+    );
+
+    /* ===============================
+     * TÍTULO CENTRAL
+     * =============================== */
+    $this->SetTextColor(0, 0, 0);
     $this->SetFont('helvetica', 'B', 12);
-    $this->SetXY(0, 8);
+    $this->SetXY(0, 14);
     $this->Cell(0, 6, 'ORDEM DE SERVIÇO', 0, 1, 'C');
 
     $this->SetFont('helvetica', '', 11);
     $this->Cell(0, 6, '#' . $this->osNumero, 0, 1, 'C');
 
-    // ===============================
-    // DADOS À DIREITA
-    // ===============================
-    $this->SetFont('helvetica', '', 9);
-    $this->SetXY(140, 8);
-    $this->Cell(60, 5, 'RESPONSÁVEL: ' . $this->responsavel, 0, 2, 'R');
-    $this->Cell(60, 5, 'EMISSÃO: ' . $this->emissao, 0, 2, 'R');
-
-    // ===============================
-    // LINHA SEPARADORA (MAIS BAIXO)
-    // ===============================
-    // ANTES: Y = 28
-    // AGORA: Y = 32  → não corta o logo
+    /* ===============================
+     * LINHA SEPARADORA
+     * =============================== */
     $this->Line(10, 32, 200, 32);
 }
 
@@ -149,5 +183,20 @@ if (!empty($this->prioridade)) {
         'R'
     );
 }
+protected function cellFitText($w, $h, $text, $border = 1, $align = 'L')
+{
+    $sizes = [8, 7, 6]; // tamanhos possíveis
+    foreach ($sizes as $size) {
+        $this->SetFont('helvetica', '', $size);
+        if ($this->GetStringWidth($text) <= ($w - 2)) {
+            break;
+        }
+    }
+
+    $this->Cell($w, $h, $text, $border, 0, $align);
+}
+
+
+
 
 }
